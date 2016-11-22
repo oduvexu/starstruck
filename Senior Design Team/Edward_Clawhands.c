@@ -184,10 +184,9 @@ task usercontrol() {
 
     // Remove this function call once you have "real" code.
     // UserControlCodePlaceholderForTesting();
-
-  	liftControl();
-		driveControl();
-		clawControl();
+	liftControl();
+	clawControl();
+	driveControl();
   }
 }
 
@@ -223,25 +222,16 @@ void liftControl() {
 }
 
 void clawControl() {
-
 	if(vexRT[Btn5U]) {
 	 motor[claw_L] = -60;
 	 motor[claw_R] = -60;
 	}
-
-  else if (vexRT[Btn5D]) {
+	else if (vexRT[Btn5D]) {
 		motor[claw_L] = 60;
 		motor[claw_R] = 60;
 	}
-
 	else {
 		motor[claw_L] = 0;
 		motor[claw_R] = 0;
 	}
-
-/*	else if (vexRT[Btn7D]) {
-		motor[claw_L] = -125;
-		motor[claw_R] = -125;
-	} */
-
 }
