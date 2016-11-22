@@ -4,10 +4,10 @@
 #pragma config(Motor,  port1,           lift_ML,       tmotorVex393HighSpeed_HBridge, openLoop, reversed, driveLeft)
 #pragma config(Motor,  port2,           drive_FR,      tmotorVex393HighSpeed_MC29, openLoop, driveRight)
 #pragma config(Motor,  port3,           drive_FL,      tmotorVex393HighSpeed_MC29, openLoop, driveLeft)
-#pragma config(Motor,  port4,           claw_R,        tmotorServoStandard, openLoop)
-#pragma config(Motor,  port5,           lift_BL,       tmotorVex393HighSpeed_MC29, PIDControl, driveLeft, encoderPort, I2C_1)
-#pragma config(Motor,  port6,           lift_BR,       tmotorVex393HighSpeed_MC29, PIDControl, reversed, driveRight, encoderPort, I2C_2)
-#pragma config(Motor,  port7,           claw_L,        tmotorServoStandard, openLoop, reversed)
+#pragma config(Motor,  port4,           claw_R,        tmotorVex393_MC29, openLoop, driveRight)
+#pragma config(Motor,  port5,           lift_BL,       tmotorVex393HighSpeed_MC29, openLoop, driveLeft, encoderPort, I2C_1)
+#pragma config(Motor,  port6,           lift_BR,       tmotorVex393HighSpeed_MC29, openLoop, reversed, driveRight, encoderPort, I2C_2)
+#pragma config(Motor,  port7,           claw_L,        tmotorVex393_MC29, openLoop, reversed, driveLeft)
 #pragma config(Motor,  port8,           drive_BR,      tmotorVex393HighSpeed_MC29, openLoop, reversed, driveRight)
 #pragma config(Motor,  port9,           drive_BL,      tmotorVex393HighSpeed_MC29, openLoop, reversed, driveLeft)
 #pragma config(Motor,  port10,          lift_MR,       tmotorVex393HighSpeed_HBridge, openLoop, driveRight)
@@ -33,10 +33,10 @@ void clawControl();
 void liftControl();
 void driveControl();
 
-//task initClaw() {
-//	motor[claw_L] = -125;
-//	motor[claw_R] = -125;
-//}
+task initClaw() {
+	motor[claw_L] = -125;
+	motor[claw_R] = -125;
+} // no longer used
 
 /*---------------------------------------------------------------------------*/
 /*                          Pre-Autonomous Functions                         */
@@ -47,12 +47,22 @@ void driveControl();
 /*  function is only called once after the cortex has been powered on and    */
 /*  not every time that the robot is disabled.                               */
 /*---------------------------------------------------------------------------*/
-void pre_auton() {
-	bStopTasksBetweenModes = true;
 
-	// All activities that occur before the competition starts
-	// Example: clearing encoders, setting servo positions, ...
-	//startTask(initClaw);
+void pre_auton() {
+  // Set bStopTasksBetweenModes to false if you want to keep user created tasks
+  // running between Autonomous and Driver controlled modes. You will need to
+  // manage all user created tasks if set to false.
+  bStopTasksBetweenModes = true;
+
+	// Set bDisplayCompetitionStatusOnLcd to false if you don't want the LCD
+	// used by the competition include file, for example, you might want
+	// to display your team name on the LCD in this function.
+	// bDisplayCompetitionStatusOnLcd = false;
+
+  // All activities that occur before the competition starts
+  // Example: clearing encoders, setting servo positions, ...
+
+  // startTask(initClaw);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -64,7 +74,14 @@ void pre_auton() {
 /*                                                                           */
 /*  You must modify the code to add your own robot specific commands here.   */
 /*---------------------------------------------------------------------------*/
+
 task autonomous() {
+  // ..........................................................................
+  // Insert user code here.
+  // ..........................................................................
+
+  // Remove this function call once you have "real" code.
+  // AutonomousCodePlaceholderForTesting();
 
 	motor[lift_BL] = -45;
 	motor[lift_BR] = -45;
@@ -140,9 +157,6 @@ task autonomous() {
 	motor[drive_FL] =  0;
 	motor[drive_BR] =  0;
 	motor[drive_BL] =  0;
-
-
-
 }
 
 /*---------------------------------------------------------------------------*/
@@ -154,14 +168,27 @@ task autonomous() {
 /*                                                                           */
 /*  You must modify the code to add your own robot specific commands here.   */
 /*---------------------------------------------------------------------------*/
-task usercontrol() {
-	// ALL USER CONTROL CODE MUST GO INSIDE THE LOOP
-	while (true) {
 
-		liftControl();
+task usercontrol() {
+  // User control code here, inside the loop
+
+  while (true) {
+    // This is the main execution loop for the user control program.
+    // Each time through the loop your program should update motor + servo
+    // values based on feedback from the joysticks.
+
+    // ........................................................................
+    // Insert user code here. This is where you use the joystick values to
+    // update your motors, etc.
+    // ........................................................................
+
+    // Remove this function call once you have "real" code.
+    // UserControlCodePlaceholderForTesting();
+
+  	liftControl();
 		driveControl();
 		clawControl();
-	}
+  }
 }
 
 /// Begin User Defined Functions
@@ -212,9 +239,9 @@ void clawControl() {
 		motor[claw_R] = 0;
 	}
 
-	//else if (vexRT[Btn7D]) {
-	//	motor[claw_L] = -125;
-	//	motor[claw_R] = -125;
-	//}
+/*	else if (vexRT[Btn7D]) {
+		motor[claw_L] = -125;
+		motor[claw_R] = -125;
+	} */
 
 }
