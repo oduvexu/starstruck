@@ -2,7 +2,7 @@
 Old Dominion's VEX U Team has two subteams, a Senior Design Team for senior engineers and a Club Team for general members. This is the Team's repository to hold all code for the VEX U Robotics Starstruck Competition Season.
 
 ## Software Packages
-All code in this repository was built using one of two software suites.
+All code in this repository was built using one of two software suites. Install files can be found at the links below or on our Team's [Google Drive](https://drive.google.com/drive/folders/0Bwvi-fTSujznZnM3YXFCbFVxQXc?usp=sharing).
 - [PROS](http://pros.cs.purdue.edu/) - an open source compiler built by the Purdue VEX U Robotics Team, the [ACM SIGBots](https://www.purduesigbots.com/).
 - [ROBOTC](http://www.robotc.net/download/vexrobotics/) - the oficial coding software of the VEX Robotics Competition.
 
