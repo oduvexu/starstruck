@@ -1,0 +1,10 @@
+void init();
+void initializeClutch();
+void engageLock();
+void disengageLock();
+void engageClutch();
+void disengageClutch();
+void raise();
+void forward(int x);
+void backward(int x);
+void autonomous();
