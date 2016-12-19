@@ -17,3 +17,6 @@ The Club Team is comprised of students from all years (Freshman to Senior) and a
 
 ### Jerry
 Jerry was the Club Team's first robot. Jerryrigged together for a scrimmage held at the College of Southern Maryland in November 2016.
+
+### Tom
+Jerry's counterpart. An improved design based off the lessons learned from the November Scrimmage. Code for this robot was modified from Jerry's original code.
