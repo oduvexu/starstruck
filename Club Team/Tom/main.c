@@ -15,13 +15,21 @@
 
 #include "utility.c"
 
+// Used for printing to debug console.
 char buffer[64];
 
-int arm_encoder = 0;
-int claw_left_encoder = 0;
-int claw_right_encoder = 0;
 //Chris add 12/18/2016
+// Upper limit to induce slower movement speed and smaller arm voltage
 int arm_encoder_up = 900;
+
+
+
+// Global variables for arm feedback control.
+int arm_encoder = 0;
+int arm_direction = 0;
+int arm_encoder_target = 0;
+int arm_effort = 0;
+
 
 task main()
 {
@@ -32,6 +40,7 @@ task main()
 	int Y1 = 0;
 	int X2 = 0;
 
+	// This will output to the console in debug mode
 	writeDebugStreamLine("Program Start");
 
 	while(true)
@@ -42,29 +51,25 @@ task main()
 		word close_claw = vexRT[Btn5U]; // L1
 		word open_claw  = vexRT[Btn5D]; // L2
 
-
-
+		// If the encoder value has changed
 		if (nMotorEncoder[ARM] != arm_encoder)
 		{
+			if (arm_encoder > nMotorEncoder[ARM])
+			{
+				arm_direction = 1; // Encoder going up
+			}
+			else if (arm_encoder < nMotorEncoder[ARM])
+			{
+				arm_direction = -1; // Encoder going down
+			}
+
 			arm_encoder = nMotorEncoder[ARM];
-			sprintf(buffer, "Arm Encoder: %d", arm_encoder);
-			//writeDebugStreamLine(buffer);
-		}
 
-		if (nMotorEncoder[CLAW] != claw_right_encoder)
-		{
-			claw_right_encoder = nMotorEncoder[CLAW];
-			sprintf(buffer, "Right Claw Encoder: %d", claw_right_encoder);
-			//writeDebugStreamLine(buffer);
+			// Display the current arm encoder value on the LCD
+			displayLCDPos(0,0);
+			sprintf(buffer, "ARM: %d", arm_encoder);
+			displayNextLCDString(buffer);
 		}
-
-		if (nMotorEncoder[LEFTCLAW] != claw_left_encoder)
-		{
-			claw_left_encoder = nMotorEncoder[LEFTCLAW];
-			sprintf(buffer, "Left Claw Encoder: %d", claw_left_encoder);
-			//writeDebugStreamLine(buffer);
-		}
-
 
 
 		// Open claw
@@ -83,17 +88,31 @@ task main()
 			motor[CLAW] = 0;
 		}
 
+
+		// On input, raise or lower the target encoder value
+		if (raise_arm && arm_encoder_target < 7000)
+		{
+			arm_encoder_target += 1;
+		}
+		else if (lower_arm && arm_encoder_target > 0)
+		{
+			arm_encoder_target -= 1;
+		}
+
+
+
 		//Raises Arm
 		if (raise_arm)
 		{
-			if (nMotorEncoder[ARM] >= arm_encoder_up){
-			motor[ARM] = -50;
+			if (nMotorEncoder[ARM] >= arm_encoder_up)
+			{
+				motor[ARM] = -50;
 			}
-			else{
-			motor[ARM] = -127;
+			else
+			{
+				motor[ARM] = -127;
 			}
 		}
-
 		//Lower Arm
 		else if (lower_arm && arm_encoder > 50)
 		{
@@ -133,20 +152,26 @@ task main()
 		{
 			X2 = 0;
 		}
-if (nMotorEncoder[ARM] >= arm_encoder_up || Y1 != 0){
 
-		motor[FL] = (-Y1 - X1 - X2)*.5;
-		motor[FR] =  (Y1 - X1 - X2)*.5;
-		motor[BR] =  (Y1 + X1 - X2)*.5;
-		motor[BL] = (-Y1 + X1 - X2)*.5;
-}
-else {
+		// Modifier sets max speed to percentage
+		// so the bot goes slower if is holding something
+		float modifier = 0.5;
 
-		motor[FL] = (-Y1 - X1 - X2);
-		motor[FR] =  (Y1 - X1 - X2);
-		motor[BR] =  (Y1 + X1 - X2);
-		motor[BL] = (-Y1 + X1 - X2);
-}
+		if (nMotorEncoder[ARM] >= arm_encoder_up || Y1 != 0)
+		{
+				motor[FL] = (-Y1 - X1 - X2)*modifier;
+				motor[FR] =  (Y1 - X1 - X2)*modifier;
+				motor[BR] =  (Y1 + X1 - X2)*modifier;
+				motor[BL] = (-Y1 + X1 - X2)*modifier;
+		}
+		else
+		{
+				motor[FL] = (-Y1 - X1 - X2);
+				motor[FR] =  (Y1 - X1 - X2);
+				motor[BR] =  (Y1 + X1 - X2);
+				motor[BL] = (-Y1 + X1 - X2);
+		}
+
 		wait1Msec(10);
 	}
 }

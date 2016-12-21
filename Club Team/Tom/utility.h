@@ -1,10 +1,8 @@
 void init();
-void initializeClutch();
-void engageLock();
-void disengageLock();
-void engageClutch();
-void disengageClutch();
-void raise();
+
+
+/* // Currently unused
 void forward(int x);
 void backward(int x);
-void autonomous();
+void sideLeft(int x);
+*/
