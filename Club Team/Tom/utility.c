@@ -10,21 +10,21 @@ void forward(int x){
 		motor[FL] = -x;
 		motor[FR] = x;
 		motor[BR] = x;
-		motor[BL] = -x*1.2;
+		motor[BL] = -x;
 }
 
 void backward(int x){
 		motor[FL] = x;
 		motor[FR] = -x;
 		motor[BR] = -x;
-		motor[BL] = x*1.2;
+		motor[BL] = x;
 }
 
 void sideLeft(int x){
 		motor[FL] = x;
 		motor[FR] = x;
 		motor[BR] = -x;
-		motor[BL] = -x*1.2;
+		motor[BL] = -x;
 }
 
 void autonomous(){
@@ -119,21 +119,21 @@ void forward(int x){
 		motor[FL] = -x;
 		motor[FR] = x;
 		motor[BR] = x;
-		motor[BL] = -x*1.2;
-}
+		motor[BL] = -x;
 
+}
 void backward(int x){
 		motor[FL] = x;
 		motor[FR] = -x;
 		motor[BR] = -x;
-		motor[BL] = x*1.2;
+		motor[BL] = x;
 }
 
 void sideLeft(int x){
 		motor[FL] = x;
 		motor[FR] = x;
 		motor[BR] = -x;
-		motor[BL] = -x*1.2;
+		motor[BL] = -x;
 }
 
 void autonomous(){

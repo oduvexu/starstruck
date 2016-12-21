@@ -70,7 +70,7 @@ task main()
 		// Open claw
 		if (open_claw)
 		{
-			motor[CLAW] = -40;
+			motor[CLAW] = -100;
 		}
 
 		// Close claw
@@ -133,12 +133,20 @@ task main()
 		{
 			X2 = 0;
 		}
+if (nMotorEncoder[ARM] >= arm_encoder_up || Y1 != 0){
 
-		motor[FL] = -Y1 - X1 - X2;
-		motor[FR] =  Y1 - X1 - X2;
-		motor[BR] =  Y1 + X1 - X2;
-		motor[BL] = (-Y1 + X1 - X2)*1.2;
+		motor[FL] = (-Y1 - X1 - X2)*.5;
+		motor[FR] =  (Y1 - X1 - X2)*.5;
+		motor[BR] =  (Y1 + X1 - X2)*.5;
+		motor[BL] = (-Y1 + X1 - X2)*.5;
+}
+else {
 
+		motor[FL] = (-Y1 - X1 - X2);
+		motor[FR] =  (Y1 - X1 - X2);
+		motor[BR] =  (Y1 + X1 - X2);
+		motor[BL] = (-Y1 + X1 - X2);
+}
 		wait1Msec(10);
 	}
 }
