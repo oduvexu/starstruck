@@ -6,10 +6,14 @@ void init()
 	// so we only need to control ARM voltage
 	slaveMotor(ARMSLAVE, ARM);
 	slaveMotor(ARMSLAVE2, ARM);
+	nMotorEncoder[ARM] = 0;
+
 
 	// Clear both lines of LCD
 	clearLCDLine(0);
 	clearLCDLine(1);
+
+	bLCDBacklight = true;
 }
 
 /*
