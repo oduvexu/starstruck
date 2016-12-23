@@ -29,8 +29,11 @@ int arm_encoder = 0;
 int arm_direction = 0;
 int arm_encoder_target = 0;
 
-float arm_kp = 0.2;
-float arm_kd = 0;
+float arm_kp = 0.35;
+float arm_kp_down = 0.1;
+
+float arm_kd = 0.2;
+float arm_kd_down = 0.2;
 
 task main()
 {
@@ -97,7 +100,7 @@ task main()
 
 
 		// On input, raise or lower the target encoder value
-		if (raise_arm && arm_encoder_target < 7000)
+		if (raise_arm && arm_encoder_target < 800)
 		{
 			arm_encoder_target += 10;
 		}
@@ -110,7 +113,20 @@ task main()
 		float error = arm_encoder_target - arm_encoder;
 		float velocity = getMotorVelocity(ARM)*arm_direction;
 
-		int effort = round( error*arm_kp + velocity*arm_kd);
+		int effort = 0;
+
+
+		// If arm is going down, apply the modified kp value to account for gravity.
+		if (arm_encoder_target >= arm_encoder)
+		{
+			effort = round( error*arm_kp + velocity*arm_kd);
+		}
+		else if (arm_encoder_target < arm_encoder)
+		{
+			effort = round( error*arm_kp_down + velocity*arm_kd_down);
+		}
+
+
 
 		motor[ARM] = effort;
 
