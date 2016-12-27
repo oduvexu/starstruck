@@ -18,22 +18,6 @@
 // Used for printing to debug console.
 char buffer[64];
 
-//Chris add 12/18/2016
-// Upper limit to induce slower movement speed and smaller arm voltage
-int arm_encoder_up = 900;
-
-int t = 0;
-
-// Global variables for arm feedback control.
-int arm_encoder = 0;
-int arm_direction = 0;
-int arm_encoder_target = 0;
-
-float arm_kp = 0.35;
-float arm_kp_down = 0.1;
-
-float arm_kd = 0.2;
-float arm_kd_down = 0.2;
 
 task main()
 {
@@ -55,40 +39,17 @@ task main()
 		word close_claw = vexRT[Btn5U]; // L1
 		word open_claw  = vexRT[Btn5D]; // L2
 
-		// If the encoder value has changed
-		if (-nMotorEncoder[ARM] != arm_encoder)
-		{
-			if (arm_encoder > -nMotorEncoder[ARM])
-			{
-				arm_direction = 1; // Encoder going up
-			}
-			else if (arm_encoder < -nMotorEncoder[ARM])
-			{
-				arm_direction = -1; // Encoder going down
-			}
-
-			arm_encoder = -nMotorEncoder[ARM];
-
-			// Display the current arm encoder value on the LCD
-			displayLCDPos(0,0);
-			sprintf(buffer, "ARM: %d", arm_encoder);
-			displayNextLCDString(buffer);
-
-			// Display arm velocity
-			int velocity = getMotorVelocity(ARM)*arm_direction;
-			displayLCDPos(1,0);
-			sprintf(buffer, "Vel: %d", velocity);
-			displayNextLCDString(buffer);
-		}
+		displayLCDPos(0,0);
+		sprintf(buffer, "TOM");
+		displayNextLCDString(buffer);
 
 
-		// Open claw
+
+		// Set CLAW voltages.
 		if (open_claw)
 		{
 			motor[CLAW] = -100;
 		}
-
-		// Close claw
 		else if (close_claw)
 		{
 			motor[CLAW] = 40;
@@ -99,92 +60,22 @@ task main()
 		}
 
 
-		// On input, raise or lower the target encoder value
-		if (raise_arm && arm_encoder_target < 800)
+
+		// Update ARM PID target.
+		Pid *p = &pid_list[ARM];
+		if (raise_arm && p->encoder_target < 800)
 		{
-			arm_encoder_target += 10;
+			p->encoder_target += 10;
 		}
-		else if (lower_arm && arm_encoder_target > 0)
+		else if (lower_arm && p->encoder_target > 0)
 		{
-			arm_encoder_target -= 10;
-		}
-
-
-		float error = arm_encoder_target - arm_encoder;
-		float velocity = getMotorVelocity(ARM)*arm_direction;
-
-		int effort = 0;
-
-
-		// If arm is going down, apply the modified kp value to account for gravity.
-		if (arm_encoder_target >= arm_encoder)
-		{
-			effort = round( error*arm_kp + velocity*arm_kd);
-		}
-		else if (arm_encoder_target < arm_encoder)
-		{
-			effort = round( error*arm_kp_down + velocity*arm_kd_down);
-		}
-
-
-
-		motor[ARM] = effort;
-
-
-		/*
-		if (raise_arm)
-		{
-			motor[ARM] = 80;
-		}
-		else if (lower_arm)
-		{
-			motor[ARM] = -20;
-		}
-		else
-		{
-			motor[ARM] = 0;
-		}
-		*/
-
-
-		t++;
-
-		if (t == 10)
-		{
-			sprintf(buffer, "Effort: %d\nTarget: %d\nError: %d\n", effort, arm_encoder_target, error);
-			writeDebugStream(buffer);
-
-			t = 0;
+			p->encoder_target -= 10;
 		}
 
 
 
 
 
-/*
-		//Raises Arm
-		if (raise_arm)
-		{
-			if (nMotorEncoder[ARM] >= arm_encoder_up)
-			{
-				motor[ARM] = -50;
-			}
-			else
-			{
-				motor[ARM] = -127;
-			}
-		}
-		//Lower Arm
-		else if (lower_arm && arm_encoder > 50)
-		{
-			motor[ARM] = 80;
-		}
-		else
-		{
-			motor[ARM] = 0;
-		}
-*/
-		// Ch3: Y1
 		if (abs(vexRT[Ch3]) > threshold)
 		{
 			Y1 = vexRT[Ch3];
@@ -194,7 +85,6 @@ task main()
 			Y1 = 0;
 		}
 
-		// Ch4: X1
 		if (abs(vexRT[Ch4]) > threshold)
 		{
 			X1 = vexRT[Ch4];
@@ -204,7 +94,6 @@ task main()
 			X1 = 0;
 		}
 
-		// Ch1: X2
 		if (abs(vexRT[Ch1]) > threshold)
 		{
 			X2 = vexRT[Ch1];
@@ -214,11 +103,12 @@ task main()
 			X2 = 0;
 		}
 
+
+
 		// Modifier sets max speed to percentage
 		// so the bot goes slower if is holding something
 		float modifier = 0.5;
-
-		if (nMotorEncoder[ARM] >= arm_encoder_up || Y1 != 0)
+		if (nMotorEncoder[ARM] >= 900 || Y1 != 0)
 		{
 				motor[FL] = (-Y1 - X1 - X2)*modifier;
 				motor[FR] =  (Y1 - X1 - X2)*modifier;
@@ -232,6 +122,8 @@ task main()
 				motor[BR] =  (Y1 + X1 - X2);
 				motor[BL] = (-Y1 + X1 - X2);
 		}
+
+		applyAllPID();
 
 		wait1Msec(10);
 	}
