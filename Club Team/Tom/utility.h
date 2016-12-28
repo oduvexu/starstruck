@@ -3,5 +3,5 @@
 void init();
 
 void initPID();
-void addNewPID(int motor_id, float kp, float kp_down, float kd, float kd_down);
+void addNewPID(int motor_id, float kp, float kp_down, float kd, float kd_down, bool reversed, bool debug);
 void applyAllPID();
