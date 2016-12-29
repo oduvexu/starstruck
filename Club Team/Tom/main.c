@@ -31,8 +31,8 @@ task main()
 
 	while(true)
 	{
-		word close_claw = vexRT[Btn6U]; // R1
-		word open_claw = vexRT[Btn6D]; // R2
+		word open_claw = vexRT[Btn6U]; // R1
+		word close_claw = vexRT[Btn6D]; // R2
 
 		word raise_arm = vexRT[Btn5U]; // L1
 		word lower_arm  = vexRT[Btn5D]; // L2
@@ -42,7 +42,7 @@ task main()
 		displayNextLCDString(buffer);
 
 
-
+		/*
 		// Set CLAW voltages.
 		if (open_claw)
 		{
@@ -56,7 +56,7 @@ task main()
 		{
 			motor[CLAW] = 0;
 		}
-
+		*/
 
 
 		// Update ARM PID target.
@@ -74,7 +74,7 @@ task main()
 
 		// Update CLAW PID target.
 		p = &pid_list[CLAW];
-		if (open_claw && p->encoder_target < 1100)
+		if (open_claw && p->encoder_target < 1300)
 		{
 			p->encoder_target += 20;
 		}
@@ -117,7 +117,7 @@ task main()
 
 		// Modifier sets max speed to percentage
 		// so the bot goes slower if is holding something
-		float modifier = 0.5;
+		float modifier = 1;
 		if (nMotorEncoder[ARM] >= 900 || Y1 != 0)
 		{
 				motor[FL] = (-Y1 - X1 - X2)*modifier;

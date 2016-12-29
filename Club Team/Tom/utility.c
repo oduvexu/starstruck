@@ -14,7 +14,7 @@ void init()
 	initPID();
 
 	addNewPID(ARM, 0.35, 0.1, 0.05, -0.2, true, false);
-	addNewPID(CLAW, 0.4, 0.4, -0.1, -0.1, true, true);
+	addNewPID(CLAW, 0.5, 0.5, 0, 0, true, true);
 
 
 	// Clear both lines of LCD.
@@ -127,6 +127,17 @@ void applyAllPID()
 			if (abs(error) < 10)
 			{
 				error = 0;
+			}
+
+			int lim = 60;
+
+			if (effort < -lim)
+			{
+				effort = -lim;
+			}
+			else if (effort > lim)
+			{
+				effort = lim;
 			}
 
 			motor[id] = effort;
