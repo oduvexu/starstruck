@@ -13,8 +13,8 @@ void init()
 
 	initPID();
 
-	addNewPID(ARM, 0.35, 0.1, 0.05, -0.2, true, false);
-	addNewPID(CLAW, 0.5, 0.5, 0, 0, true, true);
+	addNewPID(ARM, 0.6, 0.1, 0.05, -0.35, true, true);
+	addNewPID(CLAW, 0.5, 0.5, 0, 0, true, false);
 
 
 	// Clear both lines of LCD.
