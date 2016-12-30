@@ -13,8 +13,8 @@ void init()
 
 	initPID();
 
-	addNewPID(ARM, 0.6, 0.1, 0.05, -0.35, true, true);
-	addNewPID(CLAW, 0.5, 0.5, 0, 0, true, false);
+	addNewPID(ARM, 0.6, 0.1, 0.05, -0.35, true, false);
+	//addNewPID(CLAW, 0.9, 0.9, 0, 0, true, true);
 
 
 	// Clear both lines of LCD.
@@ -129,7 +129,7 @@ void applyAllPID()
 				error = 0;
 			}
 
-			int lim = 60;
+			int lim = 90;
 
 			if (effort < -lim)
 			{

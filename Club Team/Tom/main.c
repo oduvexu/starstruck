@@ -46,7 +46,7 @@ task main()
 		displayNextLCDString(buffer);
 
 
-		/*
+
 		// Set CLAW voltages.
 		if (open_claw)
 		{
@@ -60,7 +60,7 @@ task main()
 		{
 			motor[CLAW] = 0;
 		}
-		*/
+
 
 
 		// Update ARM PID target.
@@ -78,16 +78,20 @@ task main()
 
 		// Update CLAW PID target.
 		p = &pid_list[CLAW];
-		if (open_claw && p->encoder_target < 1300)
-		{
-			p->encoder_target += 20;
-		}
-		else if (close_claw && p->encoder_target > -100)
-		{
-			p->encoder_target -= 20;
-		}
 
+		int delta = abs(p->encoder_target - p->encoder)
 
+		if (delta < 300)
+		{
+			if (open_claw)
+			{
+				p->encoder_target += 20;
+			}
+			else if (close_claw)
+			{
+				p->encoder_target -= 20;
+			}
+		}
 
 
 		if (abs(vexRT[Ch3]) > threshold)
