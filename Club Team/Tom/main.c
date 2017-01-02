@@ -6,9 +6,9 @@
 #pragma config(Sensor, I2C_5,  ,               sensorQuadEncoderOnI2CPort,    , AutoAssign )
 #pragma config(Sensor, I2C_6,  ,               sensorQuadEncoderOnI2CPort,    , AutoAssign )
 #pragma config(Motor,  port2,           BL,            tmotorVex393_MC29, openLoop, encoderPort, I2C_4)
-#pragma config(Motor,  port3,           BR,            tmotorVex393_MC29, openLoop, encoderPort, I2C_1)
+#pragma config(Motor,  port3,           BR,            tmotorVex393_MC29, openLoop, reversed, encoderPort, I2C_1)
 #pragma config(Motor,  port4,           FL,            tmotorVex393_MC29, openLoop, encoderPort, I2C_3)
-#pragma config(Motor,  port5,           FR,            tmotorVex393_MC29, openLoop, encoderPort, I2C_2)
+#pragma config(Motor,  port5,           FR,            tmotorVex393_MC29, openLoop, reversed, encoderPort, I2C_2)
 #pragma config(Motor,  port6,           ARM,           tmotorVex393_MC29, openLoop, reversed, encoderPort, I2C_5)
 #pragma config(Motor,  port7,           ARMSLAVE,      tmotorVex393_MC29, openLoop, reversed)
 #pragma config(Motor,  port8,           ARMSLAVE2,     tmotorVex393_MC29, openLoop, reversed)
@@ -20,6 +20,7 @@
 // Used for printing to debug console.
 char buffer[64];
 
+int mode = 0;
 
 task main()
 {
@@ -46,7 +47,7 @@ task main()
 		displayNextLCDString(buffer);
 
 
-
+		/*
 		// Set CLAW voltages.
 		if (open_claw)
 		{
@@ -59,7 +60,7 @@ task main()
 		else
 		{
 			motor[CLAW] = 0;
-		}
+		}*/
 
 
 
@@ -79,24 +80,88 @@ task main()
 		// Update CLAW PID target.
 		p = &pid_list[CLAW];
 
-		int delta = abs(p->encoder_target - p->encoder)
+		int delta = p->encoder_target - p->encoder;
+		int delta_lim = 300;
 
-		if (delta < 300)
+		// If claw is trying to go backward above delta_lim
+		// don't allow it to go target backward further.
+		// Also for going forward.
+
+		if (open_claw && !(delta > delta_lim))
 		{
-			if (open_claw)
-			{
-				p->encoder_target += 20;
-			}
-			else if (close_claw)
-			{
-				p->encoder_target -= 20;
-			}
+			p->encoder_target += 20;
 		}
+		else if (close_claw && !(delta < -delta_lim))
+		{
+			p->encoder_target -= 20;
+		}
+
+
+
+		// Trigger autonomous experiment
+		if (vexRT[Btn7D] && !vexRT_P[Btn7D] && !wheelsActive())
+		{
+			switch (mode)
+			{
+				case 0:
+					resetWheelEncoders();
+					forward(1);
+					pid_list[CLAW].encoder_target = 500;
+					break;
+				case 1:
+					side(0.5);
+					break;
+				case 2:
+					forward(1);
+					pid_list[ARM].encoder_target = 580;
+					break;
+				case 3:
+					forward(-0.9);
+					break;
+				case 4:
+					rotate(90);
+					pid_list[CLAW].encoder_target = 700;
+					pid_list[ARM].encoder_target = 0;
+					break;
+				case 5:
+					forward(1.5);
+					break;
+				case 6:
+					pid_list[CLAW].encoder_target = 1300;
+					break;
+				case 7:
+					pid_list[ARM].encoder_target = 200;
+					forward(-1);
+					break;
+				case 8:
+					rotate(-90);
+					pid_list[ARM].encoder_target = 800;
+					break;
+				case 9:
+					forward(1);
+					break;
+				case 10:
+					pid_list[CLAW].encoder_target = 500;
+					break;
+				case 11:
+					forward(-1);
+					pid_list[ARM].encoder_target = 0;
+					break;
+
+
+			}
+
+			mode++;
+
+			//resetWheelEncoders();
+			//pid_list[ARM].encoder_target = 200;
+		}
+
 
 
 		if (abs(vexRT[Ch3]) > threshold)
 		{
-			Y1 = -vexRT[Ch3];
+			Y1 = vexRT[Ch3];
 		}
 		else
 		{
@@ -105,7 +170,7 @@ task main()
 
 		if (abs(vexRT[Ch4]) > threshold)
 		{
-			X1 = -vexRT[Ch4];
+			X1 = vexRT[Ch4];
 		}
 		else
 		{
@@ -114,7 +179,7 @@ task main()
 
 		if (abs(vexRT[Ch1]) > threshold)
 		{
-			X2 = -vexRT[Ch1];
+			X2 = vexRT[Ch1];
 		}
 		else
 		{
@@ -125,23 +190,35 @@ task main()
 
 		// Modifier sets max speed to percentage
 		// so the bot goes slower if is holding something
-		float modifier = 1;
-		if (nMotorEncoder[ARM] >= 900 || Y1 != 0)
-		{
-				motor[FL] = (-Y1 - X1 - X2)*modifier;
-				motor[FR] =  (Y1 - X1 - X2)*modifier;
-				motor[BR] =  (Y1 + X1 - X2)*modifier;
-				motor[BL] = (-Y1 + X1 - X2)*modifier;
-		}
-		else
-		{
-				motor[FL] = (-Y1 - X1 - X2);
-				motor[FR] =  (Y1 - X1 - X2);
-				motor[BR] =  (Y1 + X1 - X2);
-				motor[BL] = (-Y1 + X1 - X2);
-		}
 
-		applyAllPID();
+		if (!wheelsActive())
+		{
+			float modifier = 1;
+			if (nMotorEncoder[ARM] >= 900)
+			{
+					motor[FL] = (Y1 + X1 + X2)*modifier;
+					motor[FR] = (Y1 - X1 - X2)*modifier;
+					motor[BR] = (Y1 + X1 - X2)*modifier;
+					motor[BL] = (Y1 - X1 + X2)*modifier;
+			}
+			else
+			{
+					motor[FL] = (Y1 + X1 + X2);
+					motor[FR] = (Y1 - X1 - X2);
+					motor[BR] = (Y1 + X1 - X2);
+					motor[BL] = (Y1 - X1 + X2);
+			}
+		}
+		//else
+		//{
+			applyAllPID();
+		//}
+
+
+		for (int i = 0; i < NUMBER_OF_BUTTON_SLOTS; i++)
+		{
+			vexRT_P[i] = vexRT[i];
+		}
 
 		wait1Msec(10);
 	}
