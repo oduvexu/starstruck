@@ -22,6 +22,8 @@ char buffer[64];
 
 int mode = 0;
 
+bool holding = false;
+
 task main()
 {
 	init();
@@ -51,27 +53,40 @@ task main()
 		if (close_claw)
 		{
 			motor[CLAW] = -100;
+			holding = false;
 		}
-		else if (open_claw)
-		{
-			motor[CLAW] = 80;
-		}
-		else
+		else if (!holding)
 		{
 			motor[CLAW] = 0;
+		}
+
+		if (open_claw)
+		{
+			motor[CLAW] = 80;
+			holding = true;
+		}
+		else if (holding)
+		{
+			motor[CLAW] = 20;
 		}
 
 
 
 		// Update ARM PID target.
 		Pid *p = &pid_list[ARM];
-		if (raise_arm && p->encoder_target < 800)
+
+		int delta = p->encoder_target - p->encoder;
+		int delta_lim = 300;
+
+		if (raise_arm && p->encoder_target < 800 && !(delta > delta_lim))
 		{
 			p->encoder_target += 10;
+			setFixed(false);
 		}
-		else if (lower_arm && p->encoder_target > 0)
+		else if (lower_arm && p->encoder_target > 0 && !(delta < -delta_lim))
 		{
 			p->encoder_target -= 10;
+			setFixed(false);
 		}
 
 
@@ -79,8 +94,8 @@ task main()
 		// Update CLAW PID target.
 		p = &pid_list[CLAW];
 
-		int delta = p->encoder_target - p->encoder;
-		int delta_lim = 300;
+		delta = p->encoder_target - p->encoder;
+		delta_lim = 300;
 
 		// If claw is trying to go backward above delta_lim
 		// don't allow it to go target backward further.

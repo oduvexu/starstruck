@@ -11,7 +11,7 @@ void init()
 
 	initPID();
 
-	addNewPID(ARM, 0.6, 0.1, 0.05, -0.35, 0, true, false, 90, -90, 10, 0);
+	addNewPID(ARM, 0.4, 0.1, 0.05, -0.35, 0, true, false, 90, -90, 10, 0);
 	// addNewPID(CLAW, 0.3, 0.3, -0.2, -0.2, 0, true, false, 80, -100, 10, 0);
 
 	// Clear both lines of LCD.
@@ -230,8 +230,27 @@ void addNewPID(int motor_id, float kp, float kp_down, float kd, float kd_down, f
 	pid_list[motor_id].active = false;
 }
 
+int tock = -1;
+int effort_minus = 0;
+bool fixed = false;
+int hold_position = 0;
+int saved_effort = 0;
+
+void setFixed(bool _fixed)
+{
+	fixed = _fixed;
+	effort_minus = 0;
+}
+
 void applyAllPID()
 {
+	tock++;
+
+	if (tock > 10)
+	{
+		tock = 0;
+	}
+
 	for (int i = 0; i < NUMBER_OF_PID_SLOTS; i++)
 	{
 		Pid *p = &pid_list[i];
@@ -322,7 +341,52 @@ void applyAllPID()
 				p->active = true;
 			}
 
-			motor[id] = effort;
+			if (velocity == 0 && effort_minus == 0)
+			{
+				hold_position = -nMotorEncoder[ARM];
+			}
+
+			if (velocity == 0 && tock == 0 && !fixed)
+			{
+				effort_minus++;
+			}
+
+			if (effort_minus > 0 && -nMotorEncoder[ARM] < hold_position && !fixed)
+			{
+				sprintf(buffer_utility, "Lowest Effort: %d\n", effort - effort_minus + 1);
+				writeDebugStream(buffer_utility);
+
+				effort_minus *= 1.5;
+
+				saved_effort = effort - effort_minus;
+
+				sprintf(buffer_utility, "Current Effort: %d\n", effort - effort_minus);
+				writeDebugStream(buffer_utility);
+
+				sprintf(buffer_utility, "Fixed set to true");
+				writeDebugStream(buffer_utility);
+
+				fixed = true;
+			}
+
+
+
+
+			if (effort - effort_minus > 0 && effort != 0)
+			{
+				if (!fixed)
+				{
+					motor[id] = effort - effort_minus;
+				}
+				else
+				{
+					motor[id] = saved_effort;
+				}
+			}
+			else
+			{
+				motor[id] = effort;
+			}
 
 			if (p->debug)
 			{
