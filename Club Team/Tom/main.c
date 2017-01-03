@@ -46,7 +46,6 @@ task main()
 		sprintf(buffer, "Volts: %d", nAvgBatteryLevel);
 		displayNextLCDString(buffer);
 
-
 		/*
 		// Set CLAW voltages.
 		if (open_claw)
@@ -99,62 +98,9 @@ task main()
 
 
 		// Trigger autonomous experiment
-		if (vexRT[Btn7D] && !vexRT_P[Btn7D] && !wheelsActive())
+		if (vexRT[Btn7D] && !vexRT_P[Btn7D])
 		{
-			switch (mode)
-			{
-				case 0:
-					resetWheelEncoders();
-					forward(1);
-					pid_list[CLAW].encoder_target = 500;
-					break;
-				case 1:
-					side(0.5);
-					break;
-				case 2:
-					forward(1);
-					pid_list[ARM].encoder_target = 580;
-					break;
-				case 3:
-					forward(-0.9);
-					break;
-				case 4:
-					rotate(90);
-					pid_list[CLAW].encoder_target = 700;
-					pid_list[ARM].encoder_target = 0;
-					break;
-				case 5:
-					forward(1.5);
-					break;
-				case 6:
-					pid_list[CLAW].encoder_target = 1300;
-					break;
-				case 7:
-					pid_list[ARM].encoder_target = 200;
-					forward(-1);
-					break;
-				case 8:
-					rotate(-90);
-					pid_list[ARM].encoder_target = 800;
-					break;
-				case 9:
-					forward(1);
-					break;
-				case 10:
-					pid_list[CLAW].encoder_target = 500;
-					break;
-				case 11:
-					forward(-1);
-					pid_list[ARM].encoder_target = 0;
-					break;
-
-
-			}
-
-			mode++;
-
-			//resetWheelEncoders();
-			//pid_list[ARM].encoder_target = 200;
+			moveMotorsToTarget(1000, FRONT, true);
 		}
 
 
@@ -191,28 +137,24 @@ task main()
 		// Modifier sets max speed to percentage
 		// so the bot goes slower if is holding something
 
-		if (!wheelsActive())
+		float modifier = 1;
+		if (nMotorEncoder[ARM] >= 900)
 		{
-			float modifier = 1;
-			if (nMotorEncoder[ARM] >= 900)
-			{
-					motor[FL] = (Y1 + X1 + X2)*modifier;
-					motor[FR] = (Y1 - X1 - X2)*modifier;
-					motor[BR] = (Y1 + X1 - X2)*modifier;
-					motor[BL] = (Y1 - X1 + X2)*modifier;
-			}
-			else
-			{
-					motor[FL] = (Y1 + X1 + X2);
-					motor[FR] = (Y1 - X1 - X2);
-					motor[BR] = (Y1 + X1 - X2);
-					motor[BL] = (Y1 - X1 + X2);
-			}
+				motor[FL] = (Y1 + X1 + X2)*modifier;
+				motor[FR] = (Y1 - X1 - X2)*modifier;
+				motor[BR] = (Y1 + X1 - X2)*modifier;
+				motor[BL] = (Y1 - X1 + X2)*modifier;
 		}
-		//else
-		//{
-			applyAllPID();
-		//}
+		else
+		{
+				motor[FL] = (Y1 + X1 + X2);
+				motor[FR] = (Y1 - X1 - X2);
+				motor[BR] = (Y1 + X1 - X2);
+				motor[BL] = (Y1 - X1 + X2);
+		}
+
+		applyAllPID();
+
 
 
 		for (int i = 0; i < NUMBER_OF_BUTTON_SLOTS; i++)

@@ -14,125 +14,140 @@ void init()
 	addNewPID(ARM, 0.6, 0.1, 0.05, -0.35, 0, true, false, 90, -90, 10, 0);
 	addNewPID(CLAW, 0.6, 0.6, -0.2, -0.2, 0, true, false, 40, -100, 10, 0);
 
-	float pk = 0.4;
-	float pd = -0.6;
-	float ki = 0.01;
-
-	float error_deadzone = 50;
-
-	int lim = 80;
-
-//	addNewPID(FL, pk, pk, pd, pd, ki, false, false, lim, -lim, 20, error_deadzone);
-//	addNewPID(FR, pk, pk, pd, pd, ki, false, false, lim, -lim, 20, error_deadzone);
-//	addNewPID(BR, pk, pk, pd, pd, ki, false, false, lim, -lim, 20, error_deadzone);
-//	addNewPID(BL, pk, pk, pd, pd, ki, false, false, lim, -lim, 20, error_deadzone);
-
-
-
 	// Clear both lines of LCD.
 	clearLCDLine(0);
 	clearLCDLine(1);
 
 	bLCDBacklight = true;
+
+	startTask(debugStreamClear);
 }
 
 
 
-void resetWheelEncoders()
-{
-	int wheels[] = {FL, FR, BR, BL};
-	int motor_id = 0;
 
+
+
+
+
+
+void moveMotorsToTarget(int target, MovementMode mode, bool debug)
+{
+	int default_effort = 80;
+	int wheels[] = {FL, FR, BR, BL};
+	int efforts[4];
+
+	// Set efforts to default
 	for (int i = 0; i < 4; i++)
 	{
-		motor_id = wheels[i];
+		efforts[i] = default_effort;
+	}
+
+	// Reset wheel encoders
+	for (int i = 0; i < 4; i++)
+	{
+		int motor_id = wheels[i];
 		nMotorEncoder[motor_id] = 0;
-		pid_list[motor_id].encoder_target = 0;
 	}
-}
 
-// Returns whether or not the PID controllers are
-bool wheelsActive()
-{
-	int wheels[] = {FL, FR, BR, BL};
-	bool active = false;
-	int motor_id = 0;
-
+	// Set all motors to their respective effort amounts
 	for (int i = 0; i < 4; i++)
 	{
-		motor_id = wheels[i];
-		active |= pid_list[motor_id].active;
+		int motor_id = wheels[i];
+		motor[motor_id] = efforts[i];
 	}
 
-	return active;
+
+	float max_time = 1; // Max time in seconds
+	int wait_time = 10;
+
+
+	// Will loop until max_time is reached.
+	for (float t = 0; t < max_time; t += (float)(1000/wait_time))
+	{
+		// Calculate average position of encoders
+		float avg = 0;
+		for (int i = 0; i < 4; i++)
+		{
+			int motor_id = wheels[i];
+			avg += nMotorEncoder[motor_id];
+		}
+		avg /= 4;
+
+		// Loop through all encoders
+		for (int i = 0; i < 4; i++)
+		{
+			int motor_id = wheels[i];
+			int encoder = nMotorEncoder[motor_id];
+
+			// If encoder is less than average
+			// Either speed it up, or slow the others down
+			if (encoder < avg)
+			{
+				// If current effort is less than or equal to default, increase effort.
+				if (efforts[i] <= default_effort)
+				{
+					efforts[i]++;
+				}
+				else // If current effort is greater than default (and it is still less far), decrease the effort of the others.
+				{
+					for (int j = 0; j < 4; j++)
+					{
+						if (j != i)
+						{
+							efforts[j]--;
+						}
+					}
+				}
+			}
+			else if (encoder > avg)
+			{
+				// If encoder is further, but has less effort, increase the effort of the others.
+				if (efforts[i] < default_effort)
+				{
+					for (int j = 0; j < 4; j++)
+					{
+						if (j != i)
+						{
+							efforts[j]++;
+						}
+					}
+				}
+				else // If encoder is further and has more effort, decrease the effort on this motor.
+				{
+					efforts[i]--;
+				}
+			}
+		}
+
+
+		if (debug)
+		{
+			int n[4];
+
+			for (int i = 0; i < 4; i++)
+			{
+				int motor_id = wheels[i];
+				n[i] = nMotorEncoder[motor_id];
+			}
+
+			sprintf(buffer_utility,"FL:%d   FR:%d   BR:%d   BL:%d\n", n[0], n[1], n[2], n[3]);
+			writeDebugStream(buffer_utility);
+		}
+
+	}
+
+
+	// Calculate average position of encoders
+	for (int i = 0; i < 4; i++)
+	{
+		int motor_id = wheels[i];
+		nMotorEncoder[motor_id] = 0;
+	}
+
+
+
 }
-
-
-
-void forward(float length)
-{
-	// ticks needed to go 1 tile
-	float length_constant = 904;
-
-	pid_list[FL].encoder_target += length * length_constant;
-	pid_list[FR].encoder_target += length * length_constant;
-	pid_list[BR].encoder_target += length * length_constant;
-	pid_list[BL].encoder_target += length * length_constant;
-
-	pid_list[FL].active = true;
-}
-
-
-void side(float length)
-{
-	// ticks needed to move 1 tile left
-	float length_constant = 931;
-
-	pid_list[FL].encoder_target += - length * length_constant;
-	pid_list[FR].encoder_target += length * length_constant;
-	pid_list[BR].encoder_target += - length * length_constant;
-	pid_list[BL].encoder_target += length * length_constant;
-
-	pid_list[FL].active = true;
-}
-
-
-void rotate(float angle)
-{
-	// ticks needed to go 360 deg
-	float rotation_constant = 3880;
-
-	pid_list[FL].encoder_target += angle/360.0 * rotation_constant;
-	pid_list[FR].encoder_target += - angle/360.0 * rotation_constant;
-	pid_list[BR].encoder_target += - angle/360.0 * rotation_constant;
-	pid_list[BL].encoder_target += angle/360.0 * rotation_constant;
-
-	pid_list[FL].active = true;
-}
-
-void raiseArm()
-{
-	pid_list[ARM].encoder_target = 800;
-}
-
-void highFenceArm()
-{
-	pid_list[ARM].encoder_target = 580;
-}
-
-void lowFenceArm()
-{
-	pid_list[ARM].encoder_target = 560;
-}
-
-void dropArm()
-{
-	pid_list[ARM].encoder_target = 0;
-}
-
-
-
-
 
 
 
