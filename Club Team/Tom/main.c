@@ -46,20 +46,20 @@ task main()
 		sprintf(buffer, "Volts: %d", nAvgBatteryLevel);
 		displayNextLCDString(buffer);
 
-		/*
+
 		// Set CLAW voltages.
-		if (open_claw)
+		if (close_claw)
 		{
 			motor[CLAW] = -100;
 		}
-		else if (close_claw)
+		else if (open_claw)
 		{
-			motor[CLAW] = 40;
+			motor[CLAW] = 80;
 		}
 		else
 		{
 			motor[CLAW] = 0;
-		}*/
+		}
 
 
 

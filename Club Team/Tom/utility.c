@@ -12,7 +12,7 @@ void init()
 	initPID();
 
 	addNewPID(ARM, 0.6, 0.1, 0.05, -0.35, 0, true, false, 90, -90, 10, 0);
-	addNewPID(CLAW, 0.6, 0.6, -0.2, -0.2, 0, true, false, 40, -100, 10, 0);
+	// addNewPID(CLAW, 0.3, 0.3, -0.2, -0.2, 0, true, false, 80, -100, 10, 0);
 
 	// Clear both lines of LCD.
 	clearLCDLine(0);
@@ -20,7 +20,7 @@ void init()
 
 	bLCDBacklight = true;
 
-	startTask(debugStreamClear);
+	clearDebugStream();
 }
 
 
@@ -33,8 +33,9 @@ void init()
 
 void moveMotorsToTarget(int target, MovementMode mode, bool debug)
 {
-	int default_effort = 80;
+	int default_effort = 30;
 	int wheels[] = {FL, FR, BR, BL};
+	int encoders[4] = {0, 0, 0, 0}; // Used for detecting changes in encoder state
 	int efforts[4];
 
 	// Set efforts to default
@@ -58,95 +59,112 @@ void moveMotorsToTarget(int target, MovementMode mode, bool debug)
 	}
 
 
-	float max_time = 1; // Max time in seconds
+	float max_time = 10; // Max time in seconds
 	int wait_time = 10;
 
 
 	// Will loop until max_time is reached.
-	for (float t = 0; t < max_time; t += (float)(1000/wait_time))
+	for (float t = 0; t < max_time; t += wait_time/1000.0)
 	{
-		// Calculate average position of encoders
-		float avg = 0;
+		bool changed = false;
+
 		for (int i = 0; i < 4; i++)
 		{
 			int motor_id = wheels[i];
-			avg += nMotorEncoder[motor_id];
-		}
-		avg /= 4;
-
-		// Loop through all encoders
-		for (int i = 0; i < 4; i++)
-		{
-			int motor_id = wheels[i];
-			int encoder = nMotorEncoder[motor_id];
-
-			// If encoder is less than average
-			// Either speed it up, or slow the others down
-			if (encoder < avg)
-			{
-				// If current effort is less than or equal to default, increase effort.
-				if (efforts[i] <= default_effort)
-				{
-					efforts[i]++;
-				}
-				else // If current effort is greater than default (and it is still less far), decrease the effort of the others.
-				{
-					for (int j = 0; j < 4; j++)
-					{
-						if (j != i)
-						{
-							efforts[j]--;
-						}
-					}
-				}
-			}
-			else if (encoder > avg)
-			{
-				// If encoder is further, but has less effort, increase the effort of the others.
-				if (efforts[i] < default_effort)
-				{
-					for (int j = 0; j < 4; j++)
-					{
-						if (j != i)
-						{
-							efforts[j]++;
-						}
-					}
-				}
-				else // If encoder is further and has more effort, decrease the effort on this motor.
-				{
-					efforts[i]--;
-				}
-			}
+			changed |= (nMotorEncoder[motor_id] == encoders[i]);
 		}
 
-
-		if (debug)
+		if (changed)
 		{
-			int n[4];
-
+			// Update artifical encoder array
 			for (int i = 0; i < 4; i++)
 			{
 				int motor_id = wheels[i];
-				n[i] = nMotorEncoder[motor_id];
+				encoders[i] = nMotorEncoder[motor_id];
 			}
 
-			sprintf(buffer_utility,"FL:%d   FR:%d   BR:%d   BL:%d\n", n[0], n[1], n[2], n[3]);
-			writeDebugStream(buffer_utility);
-		}
+			// Calculate average position of encoders
+			float avg = 0;
+			for (int i = 0; i < 4; i++)
+			{
+				int motor_id = wheels[i];
+				avg += nMotorEncoder[motor_id];
+			}
+			avg /= 4;
 
+			// Loop through all encoders
+			for (int i = 0; i < 4; i++)
+			{
+				int motor_id = wheels[i];
+				int encoder = nMotorEncoder[motor_id];
+
+				// If encoder is less than average
+				// Either speed it up, or slow the others down
+				if (encoder < avg)
+				{
+					// If current effort is less than or equal to default, increase effort.
+					if (efforts[i] <= default_effort)
+					{
+						efforts[i]++;
+					}
+					else // If current effort is greater than default (and it is still less far), decrease the effort of the others.
+					{
+						for (int j = 0; j < 4; j++)
+						{
+							if (j != i)
+							{
+								efforts[j]--;
+							}
+						}
+					}
+				}
+				else if (encoder > avg)
+				{
+					// If encoder is further, but has less effort, increase the effort of the others.
+					if (efforts[i] < default_effort)
+					{
+						for (int j = 0; j < 4; j++)
+						{
+							if (j != i)
+							{
+								efforts[j]++;
+							}
+						}
+					}
+					else // If encoder is further and has more effort, decrease the effort on this motor.
+					{
+						efforts[i]--;
+					}
+				}
+			}
+
+			if (debug)
+			{
+				int n[4];
+
+				int e[4];
+
+				for (int i = 0; i < 4; i++)
+				{
+					n[i] = encoders[i];
+					e[i] = efforts[i];
+				}
+
+				sprintf(buffer_utility,"encoder:  FL:%d   FR:%d   BR:%d   BL:%d\n", n[0], n[1], n[2], n[3]);
+				writeDebugStream(buffer_utility);
+
+				sprintf(buffer_utility," effort:  FL:%d   FR:%d   BR:%d   BL:%d\n", e[0], e[1], e[2], e[3]);
+				writeDebugStream(buffer_utility);
+			}
+		}
+		wait1Msec(wait_time);
 	}
 
-
-	// Calculate average position of encoders
 	for (int i = 0; i < 4; i++)
 	{
 		int motor_id = wheels[i];
-		nMotorEncoder[motor_id] = 0;
+		motor[motor_id] = 0;
 	}
-
-
-
 }
 
 
