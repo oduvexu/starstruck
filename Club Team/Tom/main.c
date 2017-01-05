@@ -1,4 +1,6 @@
 #pragma config(I2C_Usage, I2C1, i2cSensors)
+#pragma config(Sensor, in1,    BATTERY,        sensorAnalog)
+#pragma config(Sensor, dgtl1,  BUTTON,         sensorDigitalIn)
 #pragma config(Sensor, I2C_1,  ,               sensorQuadEncoderOnI2CPort,    , AutoAssign )
 #pragma config(Sensor, I2C_2,  ,               sensorQuadEncoderOnI2CPort,    , AutoAssign )
 #pragma config(Sensor, I2C_3,  ,               sensorQuadEncoderOnI2CPort,    , AutoAssign )
@@ -36,7 +38,7 @@ task main()
 	// This will output to the console in debug mode
 	writeDebugStreamLine("Program Start");
 
-	while(true)
+	while (true)
 	{
 		word open_claw = vexRT[Btn6U]; // R1
 		word close_claw = vexRT[Btn6D]; // R2
@@ -44,10 +46,22 @@ task main()
 		word raise_arm = vexRT[Btn5U]; // L1
 		word lower_arm  = vexRT[Btn5D]; // L2
 
+		int ArmBattery = (int)((float)SensorValue[BATTERY] * 3.537);
+
 		displayLCDPos(0,0);
-		sprintf(buffer, "Volts: %d", nAvgBatteryLevel);
+		sprintf(buffer, "Main mV: %d", nImmediateBatteryLevel);
 		displayNextLCDString(buffer);
 
+		displayLCDPos(1,0);
+		sprintf(buffer, " Arm mV: %d", ArmBattery);
+		displayNextLCDString(buffer);
+
+
+		int button_status = SensorValue[BUTTON];
+		if (!button_status)
+		{
+			nMotorEncoder[ARM] = 0;
+		}
 
 		// Set CLAW voltages.
 		if (close_claw)
@@ -62,12 +76,19 @@ task main()
 
 		if (open_claw)
 		{
-			motor[CLAW] = 80;
+			motor[CLAW] = 100;
 			holding = true;
 		}
 		else if (holding)
 		{
-			motor[CLAW] = 20;
+			if (-nMotorEncoder[ARM] < 100)
+			{
+				motor[CLAW] = 40;
+			}
+			else
+			{
+				motor[CLAW] = 20;
+			}
 		}
 
 
@@ -78,12 +99,12 @@ task main()
 		int delta = p->encoder_target - p->encoder;
 		int delta_lim = 300;
 
-		if (raise_arm && p->encoder_target < 800 && !(delta > delta_lim))
+		if (raise_arm && p->encoder_target < 1000 && !(delta > delta_lim))
 		{
 			p->encoder_target += 10;
 			setFixed(false);
 		}
-		else if (lower_arm && p->encoder_target > 0 && !(delta < -delta_lim))
+		else if (lower_arm && p->encoder_target > -100 && !(delta < -delta_lim))
 		{
 			p->encoder_target -= 10;
 			setFixed(false);
@@ -115,7 +136,7 @@ task main()
 		// Trigger autonomous experiment
 		if (vexRT[Btn7D] && !vexRT_P[Btn7D])
 		{
-			moveMotorsToTarget(1000, FRONT, true);
+			moveMotorsToTarget(3000, FRONT, true);
 		}
 
 

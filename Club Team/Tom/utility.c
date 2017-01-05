@@ -11,7 +11,7 @@ void init()
 
 	initPID();
 
-	addNewPID(ARM, 0.4, 0.1, 0.05, -0.35, 0, true, false, 90, -90, 10, 0);
+	addNewPID(ARM, 0.4, 0.1, 0.05, -0.3, 0, true, false, 127, -127, 10, 0);
 	// addNewPID(CLAW, 0.3, 0.3, -0.2, -0.2, 0, true, false, 80, -100, 10, 0);
 
 	// Clear both lines of LCD.
@@ -33,137 +33,69 @@ void init()
 
 void moveMotorsToTarget(int target, MovementMode mode, bool debug)
 {
-	int default_effort = 30;
-	int wheels[] = {FL, FR, BR, BL};
-	int encoders[4] = {0, 0, 0, 0}; // Used for detecting changes in encoder state
-	int efforts[4];
+	float ramp_duration = 1; // How long to ramp up in seconds
 
-	// Set efforts to default
-	for (int i = 0; i < 4; i++)
-	{
-		efforts[i] = default_effort;
-	}
+	int distance_threshold = 500; // How close do we get to the target (in ticks) before we slow down
 
-	// Reset wheel encoders
+	float initial_effort = 20;
+
+	float max_effort = 90;
+
+	int wheels[4] = {FL, FR, BR, BL};
+	int neg[4] = {1, 1, 1, 1};
+
+
 	for (int i = 0; i < 4; i++)
 	{
 		int motor_id = wheels[i];
 		nMotorEncoder[motor_id] = 0;
 	}
 
-	// Set all motors to their respective effort amounts
-	for (int i = 0; i < 4; i++)
+	float t = 0;
+
+	while (true)
 	{
-		int motor_id = wheels[i];
-		motor[motor_id] = efforts[i];
-	}
-
-
-	float max_time = 10; // Max time in seconds
-	int wait_time = 10;
-
-
-	// Will loop until max_time is reached.
-	for (float t = 0; t < max_time; t += wait_time/1000.0)
-	{
-		bool changed = false;
+		// Get average encoder value (absolute relative to progress
+		float progress = 0;
 
 		for (int i = 0; i < 4; i++)
 		{
 			int motor_id = wheels[i];
-			changed |= (nMotorEncoder[motor_id] == encoders[i]);
+			int encoder = nMotorEncoder[motor_id];
+			progress += encoder*neg[i];
 		}
+		progress /= 4;
 
-		if (changed)
+		sprintf(buffer_utility, "Progress: %f\n", progress);
+		writeDebugStream(buffer_utility);
+
+		int effort = 0;
+
+		if (t < ramp_duration)
 		{
-			// Update artifical encoder array
-			for (int i = 0; i < 4; i++)
-			{
-				int motor_id = wheels[i];
-				encoders[i] = nMotorEncoder[motor_id];
-			}
-
-			// Calculate average position of encoders
-			float avg = 0;
-			for (int i = 0; i < 4; i++)
-			{
-				int motor_id = wheels[i];
-				avg += nMotorEncoder[motor_id];
-			}
-			avg /= 4;
-
-			// Loop through all encoders
-			for (int i = 0; i < 4; i++)
-			{
-				int motor_id = wheels[i];
-				int encoder = nMotorEncoder[motor_id];
-
-				// If encoder is less than average
-				// Either speed it up, or slow the others down
-				if (encoder < avg)
-				{
-					// If current effort is less than or equal to default, increase effort.
-					if (efforts[i] <= default_effort)
-					{
-						efforts[i]++;
-					}
-					else // If current effort is greater than default (and it is still less far), decrease the effort of the others.
-					{
-						for (int j = 0; j < 4; j++)
-						{
-							if (j != i)
-							{
-								efforts[j]--;
-							}
-						}
-					}
-				}
-				else if (encoder > avg)
-				{
-					// If encoder is further, but has less effort, increase the effort of the others.
-					if (efforts[i] < default_effort)
-					{
-						for (int j = 0; j < 4; j++)
-						{
-							if (j != i)
-							{
-								efforts[j]++;
-							}
-						}
-					}
-					else // If encoder is further and has more effort, decrease the effort on this motor.
-					{
-						efforts[i]--;
-					}
-				}
-			}
-
-			if (debug)
-			{
-				int n[4];
-
-				int e[4];
-
-				for (int i = 0; i < 4; i++)
-				{
-					n[i] = encoders[i];
-					e[i] = efforts[i];
-				}
-
-				sprintf(buffer_utility,"encoder:  FL:%d   FR:%d   BR:%d   BL:%d\n", n[0], n[1], n[2], n[3]);
-				writeDebugStream(buffer_utility);
-
-				sprintf(buffer_utility," effort:  FL:%d   FR:%d   BR:%d   BL:%d\n", e[0], e[1], e[2], e[3]);
-				writeDebugStream(buffer_utility);
-			}
+			effort = initial_effort + t/ramp_duration * (max_effort - initial_effort);
 		}
-		wait1Msec(wait_time);
-	}
+		else if (target - progress < distance_threshold)
+		{
+			effort = max_effort - (1 - (target - progress)/distance_threshold) * (max_effort - initial_effort);
+		}
+		else if (progress > target)
+		{
+			break;
+		}
+		else
+		{
+			effort = max_effort;
+		}
 
-	for (int i = 0; i < 4; i++)
-	{
-		int motor_id = wheels[i];
-		motor[motor_id] = 0;
+		for (int i = 0; i < 4; i++)
+		{
+			int motor_id = wheels[i];
+			motor[motor_id] = neg[i]*max_effort;
+		}
+
+		wait1Msec(10);
+		t += .01;
 	}
 }
 
@@ -246,7 +178,7 @@ void applyAllPID()
 {
 	tock++;
 
-	if (tock > 10)
+	if (tock > 1)
 	{
 		tock = 0;
 	}
@@ -359,6 +291,15 @@ void applyAllPID()
 				effort_minus *= 1.5;
 
 				saved_effort = effort - effort_minus;
+
+				if (-nMotorEncoder[ARM] < 100)
+				{
+					saved_effort = 0;
+				}
+				else if (saved_effort < 10)
+				{
+					saved_effort = 10;
+				}
 
 				sprintf(buffer_utility, "Current Effort: %d\n", effort - effort_minus);
 				writeDebugStream(buffer_utility);
