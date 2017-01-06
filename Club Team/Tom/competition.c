@@ -142,7 +142,7 @@ task usercontrol()
 		int delta = p->encoder_target - p->encoder;
 		int delta_lim = 300;
 
-		if (raise_arm && p->encoder_target < 1100 && !(delta > delta_lim))
+		if (raise_arm && !(delta > delta_lim))
 		{
 			p->encoder_target += 10;
 			setFixed(false);
