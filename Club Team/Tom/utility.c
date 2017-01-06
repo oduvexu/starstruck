@@ -11,7 +11,7 @@ void init()
 
 	initPID();
 
-	addNewPID(ARM, 0.4, 0.1, 0.05, -0.3, 0, true, false, 127, -127, 10, 0);
+	addNewPID(ARM, 0.4, 0.25, 0.05, -0.3, 0, true, false, 100, -100, 10, 0);
 	// addNewPID(CLAW, 0.3, 0.3, -0.2, -0.2, 0, true, false, 80, -100, 10, 0);
 
 	// Clear both lines of LCD.
@@ -280,7 +280,7 @@ void applyAllPID()
 
 			if (velocity == 0 && tock == 0 && !fixed)
 			{
-				effort_minus++;
+				effort_minus += 2;
 			}
 
 			if (effort_minus > 0 && -nMotorEncoder[ARM] < hold_position && !fixed)
@@ -288,7 +288,7 @@ void applyAllPID()
 				sprintf(buffer_utility, "Lowest Effort: %d\n", effort - effort_minus + 1);
 				writeDebugStream(buffer_utility);
 
-				effort_minus *= 1.5;
+				effort_minus *= 1.3;
 
 				saved_effort = effort - effort_minus;
 
@@ -296,9 +296,9 @@ void applyAllPID()
 				{
 					saved_effort = 0;
 				}
-				else if (saved_effort < 10)
+				else if (saved_effort < 7)
 				{
-					saved_effort = 10;
+					saved_effort = 7;
 				}
 
 				sprintf(buffer_utility, "Current Effort: %d\n", effort - effort_minus);
