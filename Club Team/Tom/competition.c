@@ -108,31 +108,6 @@ task usercontrol()
 			}
 		}
 
-		//int vel = getMotorVelocity(ARM);
-
-
-		/*
-		if (raise_arm)
-		{
-			motor[ARM] = 127;
-		}
-		else if (lower_arm)
-		{
-			motor[ARM] = -127;
-		}
-		else
-		{
-			motor[ARM] = 0;
-		}
-
-		if (vel != 0)
-		{
-			sprintf(buffer, "Velocity: %d\n", vel);
-			writeDebugStream(buffer);
-		}
-		*/
-
-
 
 
 
