@@ -47,6 +47,9 @@ task usercontrol()
 		sprintf(buffer, " Arm mV: %d", ArmBattery);
 		displayNextLCDString(buffer);
 
+		datalogAddValue(0, motor[ARM]);
+		datalogAddValue(1, getMotorVelocity(ARM));
+
 
 		if (!SensorValue[LIMITSWITCH])
 		{
@@ -73,7 +76,7 @@ task usercontrol()
 			}
 			else
 			{
-				motor[CLAW] = -50;
+				motor[CLAW] = -30;
 			}
 
 			holding = false;
@@ -91,7 +94,7 @@ task usercontrol()
 			}
 			else
 			{
-				motor[CLAW] = 50;
+				motor[CLAW] = 30;
 			}
 
 			holding = true;
@@ -100,11 +103,11 @@ task usercontrol()
 		{
 			if (-nMotorEncoder[ARM] < 100)
 			{
-				motor[CLAW] = 50;
+				motor[CLAW] = 30;
 			}
 			else
 			{
-				motor[CLAW] = 50;
+				motor[CLAW] = 30;
 			}
 		}
 
