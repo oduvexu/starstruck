@@ -21,9 +21,9 @@ void init()
 	bLCDBacklight = true;
 
 	clearDebugStream();
+
+	datalogClear();
 }
-
-
 
 
 
