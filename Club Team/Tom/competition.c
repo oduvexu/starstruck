@@ -96,6 +96,8 @@ task usercontrol()
 
 
 
+
+
 		int button_status = SensorValue[BUTTON];
 
 		if (!button_status && -nMotorEncoder[ARM] < 100)
@@ -182,6 +184,19 @@ task usercontrol()
 			p->encoder_target = 0;
 		}
 
+		if (vexRT[Btn5U])
+		{
+			motor[ARM] = 100;
+		}
+		else if (vexRT[Btn5D])
+		{
+			motor[ARM] = -100;
+		}
+		else
+		{
+			motor[ARM] = 0;
+		}
+
 
 		// Update CLAW PID target.
 		p = &pid_list[CLAW];
@@ -260,7 +275,7 @@ task usercontrol()
 				motor[BL] = (Y1 - X1 + X2)*modifier;
 		}
 
-		applyAllPID();
+		// applyAllPID();
 
 
 
