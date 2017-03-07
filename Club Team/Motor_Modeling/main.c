@@ -28,21 +28,22 @@ task main()
 
 			if (on)
 			{
-				datalogClear();
+			//	datalogClear();
+			//	datalogBackgroundPollingResume();
 			}
 		}
 
 		if (on)
 		{
-			motor[M] = 50;
+			motor[M] = 20;
 		}
 		else
 		{
-			motor[M] = 0;
+			motor[M] = vexRT[Ch2];
 		}
 
 		datalogDataGroupStart();
-			datalogAddValue(0, 50);
+			datalogAddValue(0, motor[M]);
 			datalogAddValue(1, getMotorVelocity(M));
 		datalogDataGroupEnd();
 
