@@ -28,8 +28,8 @@ task main()
 
 			if (on)
 			{
-			//	datalogClear();
-			//	datalogBackgroundPollingResume();
+				nMotorEncoder[M] = 0;
+				datalogClear();
 			}
 		}
 
@@ -44,7 +44,8 @@ task main()
 
 		datalogDataGroupStart();
 			datalogAddValue(0, motor[M]);
-			datalogAddValue(1, getMotorVelocity(M));
+			datalogAddValue(1, nMotorEncoder[M]);
+			datalogAddValue(2, getMotorVelocity(M));
 		datalogDataGroupEnd();
 
 		updateButtons();
