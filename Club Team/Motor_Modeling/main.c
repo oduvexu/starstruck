@@ -39,13 +39,13 @@ task main()
 		}
 		else
 		{
-			motor[M] = vexRT[Ch2];
+			motor[M] = 0;
 		}
 
 		datalogDataGroupStart();
-			datalogAddValue(0, motor[M]);
-			datalogAddValue(1, nMotorEncoder[M]);
-			datalogAddValue(2, getMotorVelocity(M));
+		datalogAddValue(0, motor[M]);
+		datalogAddValue(1, nMotorEncoder[M]);
+		datalogAddValue(2, getMotorVelocity(M));
 		datalogDataGroupEnd();
 
 		updateButtons();
