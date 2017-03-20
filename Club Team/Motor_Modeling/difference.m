@@ -37,7 +37,7 @@ function [ area ] = difference( model_exec, inputs, exp_data, draw )
     percentage_error = area/exp_area;
     percentage_error2 = area2/exp2_area;
     
-    weight_ratio = 100;
+    weight_ratio = 10000;
     
     area = percentage_error + weight_ratio * percentage_error2;
     

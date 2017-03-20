@@ -22,13 +22,26 @@ function [ Z_d ] = deriv(t, Z, motor, effort)
     
     % 'effort' is a function handle that returns the effort given as a 
     % function of time.
-    battery = 7.8;
+    battery = 7.623;
     
-    %voltage = battery / 20 * (29 - 88/sqrt(effort(t)+.001));
-    %voltage = max(0, V*voltage);
-
-    voltage = battery / 7.8 * (0.0905*effort(t) - 0.1976);
+    eff = effort(t);
+    bool = 0;
+    if (eff < 0)
+        eff = -eff;
+        bool = 1;
+    end
+    
+    voltage = battery / 20 * (29 - 88/sqrt(eff+.001));
     voltage = max(0, V*voltage);
+    voltage = min(V*voltage, battery);
+    
+    if (bool == 1)
+        voltage = -voltage;
+    end
+
+    %voltage = battery / 7.8 * (0.0905*effort(t) - 0.1976);
+    %voltage = max(0, V*voltage);
+    %voltage = min(V*voltage, battery);
     
     ang = Z(1);
     vang = Z(2);

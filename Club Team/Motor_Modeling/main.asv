@@ -5,7 +5,7 @@ TICKS_PER_REVOLUTION_TURBO = 261.333;
 
 TICKS_PER_REVOLUTION_INTERNAL = 240.448;
 
-Experiment = csvread('effort_random3.csv', 1, 1);
+Experiment = csvread('effort_random.csv', 1, 1);
 
 Exp_Time = Experiment(:,1);
 Exp_Effort = Experiment(:,2);
