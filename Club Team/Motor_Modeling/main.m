@@ -5,7 +5,7 @@ TICKS_PER_REVOLUTION_TURBO = 261.333;
 
 TICKS_PER_REVOLUTION_INTERNAL = 240.448;
 
-Experiment = csvread('effort_random3.csv', 1, 1);
+Experiment = csvread('constant_effort50.csv', 1, 1);
 
 Exp_Time = Experiment(:,1);
 Exp_Effort = Experiment(:,2);
@@ -54,12 +54,12 @@ guess = [0.000010410671586   0.000208870528766   0.391386588375573   0.950612618
 
 optim(guess);
 
-%opt = optimset('MaxIter',200*30,'MaxFunEvals',200*30);
-%optimal_motor = fminsearch(optim, guess ,opt)
+opt = optimset('MaxIter',200*30,'MaxFunEvals',200*30);
+optimal_motor = fminsearch(optim, guess ,opt)
 
 difference(model_exec, guess, exp_data, true)
 
-[t, model_data] = model_exec(max_simulation_time, guess);
+[t, model_data] = model_exec(max_simulation_time, optimal_motor);
 
 figure(3)
 plot(t,model_data(:,3))
