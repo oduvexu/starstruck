@@ -41,6 +41,8 @@ while(1){
 int forward_channel = abs(vexRT[Ch3]) <= 15 ? 0 : vexRT[Ch3];
 int turn_channel = abs(vexRT[Ch1]) <= 15 ? 0 : vexRT[Ch1];
 
+
+
 motor[TEST] = (forward_channel*1.5 + turn_channel*0.4)/2 - motorS[0].deltaEffort;
 motor[TEST2] = (forward_channel*1.5 - turn_channel*0.4)/2 - abs(motorS[0].deltaEffort)*motorS[1].direction;
 
