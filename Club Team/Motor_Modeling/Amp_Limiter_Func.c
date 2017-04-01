@@ -4,6 +4,7 @@ When motor is moving opposite direction as effort, don't allow negative effort t
 */
 
 typedef struct{
+	int input;
 	int increaseAmpRate;
 	int reduceAmpRate;
 	int port;
@@ -90,7 +91,7 @@ void start_SmartMotor(SmartMotor &sm){
 	clearTimer(T1);
 
 	while(1){
-
+		//motor[sm.smotor] = sm.input;
 		sm.effort = motor[sm.smotor];
 		positionCurrent = getMotorEncoder(sm.smotor);
 		sm.backEMF = -(sm.Ke * (getMotorVelocity(sm.smotor))* sm.direction);
@@ -153,8 +154,35 @@ void start_SmartMotor(SmartMotor &sm){
 		else if(positionCurrent < positionPrev)
 			sm.direction = -1;
 
+					//Check if effort and direction are different
+		if((sm.direction * sm.effort) < 0){
+
+			writeDebugStream("Wrong Way:%d",(sm.direction * sm.effort));
+			while(getMotorVelocity(sm.smotor) > 5 ){
+				writeDebugStream("Loop:%d",(sm.direction * sm.effort));
+				motor[sm.smotor] = sm.input*(15.0/127.0);
+				sm.deltaEffort = 0;
+				sm.amps = ((sm.backEMF)/sm.motorRes);
+				sm.backEMF = -(sm.Ke * (getMotorVelocity(sm.smotor))* sm.direction);
+				sm.effortVolts = 0;
+			}
+
+			//If effort is less than 5 than zero the change of effort.
+			//We don't need to monitor effort if it's lower than 5.
+			if((sm.effort < 10 && sm.effort > -10)){
+				sm.deltaEffort = 0;
+				motor[sm.smotor] = sm.input;
+			}
+
+			//If Amps are below target and the limiter is within bounds, slowly allow more effort by 1 every 100msec
+			else if((sm.targetAmp) > abs(sm.amps)){
+				motor[sm.smotor] = sm.input;
+			}
+
+		}
+
 		//Check if effort and direction are the same way
-		if((sm.direction * sm.effort) > 1){
+		else{
 
 
 			//If effort is less than 5 than zero the change of effort.
@@ -163,14 +191,14 @@ void start_SmartMotor(SmartMotor &sm){
 				sm.deltaEffort = 0;
 
 			//If Amps go above target and the limiter is within bounds, deduct effort by 5 every 100msec
-			if(((sm.targetAmp < sm.amps) || (abs(groupAmps[sm.group]) > groupAmpsLimit[sm.group])) && (sm.direction == 1)  && (sm.deltaEffort < 127)){
+			if(((sm.targetAmp < sm.amps) || (abs(groupAmps[sm.group]) > groupAmpsLimit[sm.group])) && (sm.direction == 1)  && (sm.deltaEffort < 127) && (sm.deltaEffort > 0)){
 				if(abs(groupAmps[sm.group]) > groupAmpsLimit[sm.group])
 					sm.deltaEffort = sm.deltaEffort + 1;
 				if(sm.targetAmp < sm.amps)
 					sm.deltaEffort = sm.deltaEffort + 5;
 			}
 
-			else if(((sm.targetAmp < -sm.amps) || (abs(groupAmps[sm.group]) > groupAmpsLimit[sm.group])) && (sm.direction == -1)){
+			else if(((sm.targetAmp < -sm.amps) || (abs(groupAmps[sm.group]) > groupAmpsLimit[sm.group])) && (sm.direction == -1) && (sm.deltaEffort < 0) && (sm.deltaEffort > -127)){
 				if(abs(groupAmps[sm.group]) > groupAmpsLimit[sm.group])
 					sm.deltaEffort = sm.deltaEffort - 1;
 				if(sm.targetAmp < -sm.amps)
@@ -186,33 +214,10 @@ void start_SmartMotor(SmartMotor &sm){
 					sm.deltaEffort = sm.deltaEffort + sm.increaseAmpRate;
 			}
 
-
+			motor[sm.smotor] = sm.input;
 		}
 
-		//Check if effort and direction are different
-		if((sm.direction * sm.effort) < 1){
 
-			//
-			while(0.2 < abs(sm.amps)){
-				motor[sm.smotor] =0;
-				sm.deltaEffort = sm.effort;
-				sm.amps = ((sm.backEMF)/sm.motorRes);
-				sm.backEMF = -(sm.Ke * (getMotorVelocity(sm.smotor))* sm.direction);
-				sm.effortVolts = 0;
-			}
-
-			//If effort is less than 5 than zero the change of effort.
-			//We don't need to monitor effort if it's lower than 5.
-			if((sm.effort < 10 && sm.effort > -10))
-				sm.deltaEffort = 0;
-
-
-			//If Amps are below target and the limiter is within bounds, slowly allow more effort by 1 every 100msec
-			else if((sm.targetAmp) > abs(sm.amps)){
-
-			}
-
-		}
 
 		sm.totalAmp = sm.totalAmp + sm.amps;
 		sm.timeDiv++;
