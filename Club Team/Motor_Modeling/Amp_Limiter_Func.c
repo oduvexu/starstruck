@@ -25,16 +25,17 @@ typedef struct{
 	float effortVolts;
 	float Ke;
 	float amps;
+	float multiplier;
 	bool off;
 	float backEMF;
 	int direction;
 } SmartMotor;
 
-void init_SmartMotor(SmartMotor &sm, int smotor, int port)
+void init_SmartMotor(SmartMotor &sm, int smotor)
 {
 	sm.increaseAmpRate = 3;
 	sm.reduceAmpRate = 8;
-	sm.port = port;
+	sm.port = smotor;
 	sm.group = NULL;
 	sm.direction = 0;
 	sm.smotor = smotor;
@@ -68,6 +69,8 @@ SmartMotor motorS[12];
 int groups[12][12] = {{0}};
 int groupAmount[12] = {{0}};
 float groupAmps[12] = {{0}};
+float groupDelta[12] = {{0}};
+float groupMultiplier[12] = {{0}};
 float groupAmpsLimit[12] = {{4}};
 bool monitorGroup[12] = {{false}};
 
@@ -86,24 +89,28 @@ void start_SmartMotor(SmartMotor &sm){
 	float ampAvgDiv = 1;
 	float ampAvg = 0;
 	float calcAmp = 0;
+	float calcDelta = 0;
 
 
 	clearTimer(T1);
 
 	while(1){
-		//motor[sm.smotor] = sm.input;
 		sm.effort = motor[sm.smotor];
 		positionCurrent = getMotorEncoder(sm.smotor);
 		sm.backEMF = -(sm.Ke * (getMotorVelocity(sm.smotor))* sm.direction);
 		calcAmp = 0;
+		calcDelta = 0;
 
 		for(int j = 0; j < 12; j++){
 			if(monitorGroup[j]){
 				for(int i = 0; i < groupAmount[j] + 1; i++){
 					calcAmp = calcAmp + motorS[groups[j][i]].amps;
+					if(abs(calcDelta) < abs(motorS[groups[j][i]].deltaEffort))
+					calcDelta =  motorS[groups[j][i]].deltaEffort;
 				}
 				groupAmps[j] = calcAmp;
-
+				groupDelta[j] = calcDelta;
+				groupMultiplier[j] = (127.0-groupDelta[j])/127.0;
 			}
 		}
 
@@ -155,28 +162,39 @@ void start_SmartMotor(SmartMotor &sm){
 			sm.direction = -1;
 
 					//Check if effort and direction are different
-		if((sm.direction * sm.effort) < 0){
+		if((sm.direction * sm.effort) < -15){
 
 			writeDebugStream("Wrong Way:%d",(sm.direction * sm.effort));
-			while(getMotorVelocity(sm.smotor) > 5 ){
+
+			if(getMotorVelocity(sm.smotor) > 15 && (sm.direction * sm.effort) < 0){
+				positionCurrent = getMotorEncoder(sm.smotor);
 				writeDebugStream("Loop:%d",(sm.direction * sm.effort));
-				motor[sm.smotor] = sm.input*(15.0/127.0);
+				sm.input = sm.input*(15.0/127.0);
 				sm.deltaEffort = 0;
 				sm.amps = ((sm.backEMF)/sm.motorRes);
 				sm.backEMF = -(sm.Ke * (getMotorVelocity(sm.smotor))* sm.direction);
 				sm.effortVolts = 0;
+				sm.effort = sm.input;
+
+				if(positionCurrent > positionPrev)
+				sm.direction = 1;
+
+				else if(positionCurrent < positionPrev)
+				sm.direction = -1;
+
+				positionPrev = getMotorEncoder(sm.smotor);
 			}
 
 			//If effort is less than 5 than zero the change of effort.
 			//We don't need to monitor effort if it's lower than 5.
 			if((sm.effort < 10 && sm.effort > -10)){
 				sm.deltaEffort = 0;
-				motor[sm.smotor] = sm.input;
+				sm.effort = 0;
 			}
 
 			//If Amps are below target and the limiter is within bounds, slowly allow more effort by 1 every 100msec
 			else if((sm.targetAmp) > abs(sm.amps)){
-				motor[sm.smotor] = sm.input;
+				sm.input = sm.input*(20.0/127.0);
 			}
 
 		}
@@ -187,36 +205,45 @@ void start_SmartMotor(SmartMotor &sm){
 
 			//If effort is less than 5 than zero the change of effort.
 			//We don't need to monitor effort if it's lower than 5.
-			if((sm.effort*sm.deltaEffort) < 0)
-				sm.deltaEffort = 0;
+			//if((sm.effort*sm.deltaEffort) < 0)
+			//	sm.deltaEffort = 0;
 
+			clearDebugStream();
+			writeDebugStream("Bool:%f\n",(((abs(sm.targetAmp) < abs(sm.amps)) || (abs(groupAmps[sm.group]) > groupAmpsLimit[sm.group])) && (sm.deltaEffort < 127));
+			writeDebugStream("Delta:%f\n",sm.deltaEffort);
+			writeDebugStream("Multi:%f\n",sm.multiplier);
 			//If Amps go above target and the limiter is within bounds, deduct effort by 5 every 100msec
-			if(((sm.targetAmp < sm.amps) || (abs(groupAmps[sm.group]) > groupAmpsLimit[sm.group])) && (sm.direction == 1)  && (sm.deltaEffort < 127) && (sm.deltaEffort > 0)){
-				if(abs(groupAmps[sm.group]) > groupAmpsLimit[sm.group])
-					sm.deltaEffort = sm.deltaEffort + 1;
-				if(sm.targetAmp < sm.amps)
+			if(((abs(sm.targetAmp) < abs(sm.amps)) || (abs(groupAmps[sm.group]) > groupAmpsLimit[sm.group])) && sm.deltaEffort < 127){
+			//	if(abs(groupAmps[sm.group]) > groupAmpsLimit[sm.group])
+			//		sm.deltaEffort = sm.deltaEffort + 1;
+					writeDebugStream("Check:%d",(sm.direction * sm.effort));
+				if(abs(sm.targetAmp) < abs(sm.amps)){
 					sm.deltaEffort = sm.deltaEffort + 5;
+					writeDebugStream("Check2:%d",(sm.direction * sm.effort));
+				}
 			}
-
-			else if(((sm.targetAmp < -sm.amps) || (abs(groupAmps[sm.group]) > groupAmpsLimit[sm.group])) && (sm.direction == -1) && (sm.deltaEffort < 0) && (sm.deltaEffort > -127)){
-				if(abs(groupAmps[sm.group]) > groupAmpsLimit[sm.group])
-					sm.deltaEffort = sm.deltaEffort - 1;
-				if(sm.targetAmp < -sm.amps)
-					sm.deltaEffort = sm.deltaEffort - 5;
-			}
-
 
 			//If Amps are below target and the limiter is within bounds, slowly allow more effort by 1 every 100msec
-			else if(((sm.targetAmp) > abs(sm.amps))  || (abs(groupAmps[sm.group]) < groupAmpsLimit[sm.group])){
-				if(sm.direction == 1 && sm.effort > 0 && sm.deltaEffort > 0)
+			else if(((abs(sm.targetAmp) > abs(sm.amps))  || (abs(groupAmps[sm.group]) < groupAmpsLimit[sm.group])) && sm.deltaEffort > 0){
 					sm.deltaEffort = sm.deltaEffort - sm.increaseAmpRate;
-				else if(sm.direction == -1 && sm.effort < 0 && sm.deltaEffort < 0)
-					sm.deltaEffort = sm.deltaEffort + sm.increaseAmpRate;
 			}
+			else
+			sm.deltaEffort = 0;
 
+			sm.multiplier = (127.0 - (sm.deltaEffort))/127.0;
+
+		if((sm.direction * sm.input) > -1 && getMotorVelocity(sm.smotor) > 0)
 			motor[sm.smotor] = sm.input;
+
+		else if((sm.direction * sm.input) < -1 && getMotorVelocity(sm.smotor) > 0){
+			motor[sm.smotor] = sm.input*((127-(getMotorVelocity(sm.smotor)*sm.Ke*30))/127);
+
 		}
 
+		else if(getMotorVelocity(sm.smotor) == 0)
+			motor[sm.smotor] = sm.input;
+
+		}
 
 
 		sm.totalAmp = sm.totalAmp + sm.amps;

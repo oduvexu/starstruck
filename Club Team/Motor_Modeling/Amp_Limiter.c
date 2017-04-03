@@ -15,19 +15,19 @@ task two;
 task main()
 {
 
-	init_SmartMotor(motorS[0], TEST, 2);
-	init_SmartMotor(motorS[1], TEST2, 3);
+	init_SmartMotor(motorS[TEST], TEST);
+	init_SmartMotor(motorS[TEST2], TEST2);
 
-	group_SmartMotor(0,motorS[0]);
-	group_SmartMotor(0,motorS[1]);
+	group_SmartMotor(0,motorS[TEST]);
+	group_SmartMotor(0,motorS[TEST2]);
 
 
 	groupAmpsLimit[0] = 4;
 
 	monitorGroup[0] = true;
 
-	motorS[0].targetAmp = 2;
-	motorS[1].targetAmp = 2;
+	motorS[TEST].targetAmp = 2;
+	motorS[TEST2].targetAmp = 2;
 
 	startTask(one);
 	startTask(two);
@@ -162,29 +162,29 @@ task main()
 			effort_L += delta_L/2;
 		}
 
-		motorS[TEST-1].input = effort_L * (127.0 - motorS[0].deltaEffort)/127.0;
-		motorS[TEST2-1].input = effort_R * (127.0 - abs(motorS[0].deltaEffort)*(motorS[1].direction))/127.0;
+		motorS[TEST].input = effort_R * groupMultiplier[0];
+		motorS[TEST2].input = effort_L * groupMultiplier[0];
 
-		clearDebugStream();
-		writeDebugStream("A Effort:%d\n",motorS[0].effort);
-		writeDebugStream("A Effort Delta:%d\n",motorS[0].deltaEffort);
-		writeDebugStream("B Effort:%d\n",motorS[1].effort);
-		writeDebugStream("B Effort Delta:%d\n",motorS[1].deltaEffort);
+
+/*		writeDebugStream("A Effort:%d\n",motorS[TEST].effort);
+		writeDebugStream("A Effort Delta:%d\n",motorS[TEST].deltaEffort);
+		writeDebugStream("B Effort:%d\n",motorS[TEST2].effort);
+		writeDebugStream("B Effort Delta:%d\n",motorS[TEST2].deltaEffort);
 		writeDebugStream("A GroupA:%f\n",groupAmps[0]);
 		writeDebugStream("A GroupB:%f\n",groups[0][1]);
-		writeDebugStream("BackEMF:%f\n",motorS[0].backEMF);
-		writeDebugStream("Amp:%f\n",motorS[0].amps);
-
-		wait1Msec(10);
+		writeDebugStream("BackEMF:%f\n",motorS[TEST].backEMF);
+		writeDebugStream("Amp:%f\n",motorS[TEST].amps);
+*/
+		wait1Msec(50);
 
 	}
 
 }
 
 task one{
-	start_SmartMotor(motorS[0]);
+	start_SmartMotor(motorS[TEST]);
 }
 
 task two{
-	start_SmartMotor(motorS[1]);
+	start_SmartMotor(motorS[TEST2]);
 }
