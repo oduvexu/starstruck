@@ -1,4 +1,80 @@
 /*
+Basic Instructions:
+      Thank you for using the smart motor library made at ODU as an attempt to reduce the over heating of motors. The method used is to predict the amps and limit the effort in respect to amps.
+      Anyone of the settings in the init_SmartMotor initializer can be set to how you want such as amp limit, rate of decrease in effort, rate of increase in effort etc...
+      
+      ---------Step 1: Initialize Smart Motors------------------
+      In the main function, initialize all the motors you want to be limited by calling the init_SmartMotor function so...
+      
+      init_SmartMotor(motorS[Wheel1], Wheel1);
+      init_SmartMotor(motorS[Wheel2], Wheel2);
+      
+      where "Wheel" is what you called the motor when you created it. It uses the same value that you created for the motor to convert it into a Smart Motor.
+      
+      ---------Step2: Begin the Smart Motor Task-----------------------------------
+      Once you've initialized the Smotor, you will create a task for every motor. so...
+      
+      //declare the tasks
+      task smotor1;
+      task smotor2;
+      
+      //define the tasks
+      task smotor1{
+      start_SmartMotor(motorS[Wheel1]);
+      }
+
+      task smotor2{
+      start_SmartMotor(motorS[Wheel2]);
+      }
+
+      //In your main function, start the tasks
+      startTask(smotor1);
+      startTask(smotor2);
+
+      ---------Step3: Change any settings if default isn't desired-----------------
+      You can change various settings if you'd like
+      
+      //Change amp limit, 2 amps is default
+      motorS[Wheel1].targetAmp = 2;
+      
+      //Change amp increase when under amp limit,3 is default
+      motorS[Wheel1].increaseAmpRate = 3;
+      
+      //Change amp decrease when over amp limit, 8 is default
+      motorS[Wheel1].reduceAmpRate = 8;
+      
+      ---------Step4: Multiply by the multiplier-----------------------------------
+      When you us the Smart Motor Library you no long equate the motor[] with the input. All you have to do is add an "S" at the end and put a .input so smotor[].input . This will activate all the calculations needed to limit the motors. 
+      If you want to limit the motors however you need to multiply by the multiplier. so...
+      
+      motor[TEST] = vexRT[CH1];
+      
+      becomes
+      
+      motorS[TEST].input = vexRT[CH1] * motorS[TEST].multiplier;
+      
+      
+      
+Grouping Motors:
+         We can also set the limit of groups of motors. This is to protect the cortex itself from over heating. Ports 1-5, 6-10 and the expander all share it's own 
+         respected PTC (Positive Temperature Coefficient) fuse. It's a good idea to limit the entire group of motors on each set of ports to some amps as a whole.
+         Grouping motors is extremely easy. First you need to set all the motors to Smart Motors as stated above, then add them to groups. Once they're in groups you can multiply by
+         the group multiplier and the set will be changed equally. This is optimal for drive systems where you don't want to reduce the effort unevenly.
+  
+       ---------Step1: Add motor to group------------------------------------------
+       
+       //Adds 3 motors to group 0
+       group_SmartMotor(0,motorS[Wheel1]);   
+       group_SmartMotor(0,motorS[Wheel2]);
+       group_SmartMotor(0,motorS[Wheel3]);
+       
+       //Set multiplier
+
+      motorS[Wheel1].input = vexRT[CH1] * groupMultiplier[0];  
+      motorS[Wheel2].input = vexRT[CH1] * groupMultiplier[0];
+      motorS[Wheel3].input = vexRT[CH1] * groupMultiplier[0];        
+         
+
 When motor is moving same direction as effort than limit normally
 When motor is moving opposite direction as effort, don't allow negative effort to allow more than negative of amp limit
 */
@@ -41,7 +117,7 @@ void init_SmartMotor(SmartMotor &sm, int smotor)
 	sm.smotor = smotor;
 	sm.effort = 0;
 	sm.deltaEffort = 0;
-	sm.targetAmp = 1.5;
+	sm.targetAmp = 2;
 	sm.voltDelta = 0;
 	sm.totalAmp = 0;
 	sm.ampsPsec = 0;
