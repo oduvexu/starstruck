@@ -6,8 +6,8 @@ Basic Instructions:
       ---------Step 1: Initialize Smart Motors------------------
       In the main function, initialize all the motors you want to be limited by calling the init_SmartMotor function so...
 
-      init_SmartMotor(smart_motor[Wheel1], Wheel1);
-      init_SmartMotor(smart_motor[Wheel2], Wheel2);
+      init_SmartMotor(motorS[Wheel1], Wheel1);
+      init_SmartMotor(motorS[Wheel2], Wheel2);
 
       where "Wheel" is what you called the motor when you created it. It uses the same value that you created for the motor to convert it into a Smart Motor.
 
@@ -20,11 +20,11 @@ Basic Instructions:
 
       //define the tasks
       task smotor1{
-      start_SmartMotor(smart_motor[Wheel1]);
+      start_SmartMotor(motorS[Wheel1]);
       }
 
       task smotor2{
-      start_SmartMotor(smart_motor[Wheel2]);
+      start_SmartMotor(motorS[Wheel2]);
       }
 
       //In your main function, start the tasks
@@ -35,13 +35,13 @@ Basic Instructions:
       You can change various settings if you'd like
 
       //Change amp limit, 2 amps is default
-      smart_motor[Wheel1].targetAmp = 2;
+      motorS[Wheel1].targetAmp = 2;
 
       //Change amp increase when under amp limit,3 is default
-      smart_motor[Wheel1].increaseAmpRate = 3;
+      motorS[Wheel1].increaseAmpRate = 3;
 
       //Change amp decrease when over amp limit, 8 is default
-      smart_motor[Wheel1].reduceAmpRate = 8;
+      motorS[Wheel1].reduceAmpRate = 8;
 
       ---------Step4: Multiply by the multiplier-----------------------------------
       When you us the Smart Motor Library you no long equate the motor[] with the input. All you have to do is add an "S" at the end and put a .input so smotor[].input . This will activate all the calculations needed to limit the motors.
@@ -51,7 +51,7 @@ Basic Instructions:
 
       becomes
 
-      smart_motor[TEST].input = vexRT[CH1] * smart_motor[TEST].multiplier;
+      motorS[TEST].input = vexRT[CH1] * motorS[TEST].multiplier;
 
 
 
@@ -64,18 +64,15 @@ Grouping Motors:
        ---------Step1: Add motor to group------------------------------------------
 
        //Adds 3 motors to group 0
-       group_SmartMotor(0,smart_motor[Wheel1]);
-       group_SmartMotor(0,smart_motor[Wheel2]);
-       group_SmartMotor(0,smart_motor[Wheel3]);
-       
-       //Monitor group 0
-       monitorGroup[0] = true;
+       group_SmartMotor(0,motorS[Wheel1]);
+       group_SmartMotor(0,motorS[Wheel2]);
+       group_SmartMotor(0,motorS[Wheel3]);
 
        //Set multiplier
 
-      smart_motor[Wheel1].input = vexRT[CH1] * groupMultiplier[0];
-      smart_motor[Wheel2].input = vexRT[CH1] * groupMultiplier[0];
-      smart_motor[Wheel3].input = vexRT[CH1] * groupMultiplier[0];
+      motorS[Wheel1].input = vexRT[CH1] * groupMultiplier[0];
+      motorS[Wheel2].input = vexRT[CH1] * groupMultiplier[0];
+      motorS[Wheel3].input = vexRT[CH1] * groupMultiplier[0];
 
 
 When motor is moving same direction as effort than limit normally
@@ -144,27 +141,21 @@ void init_SmartMotor(SmartMotor &sm, int smotor)
 
 }
 
-SmartMotor smart_motor[12];
+SmartMotor motorS[12];
 int groups[12][12] = {{0}};
 int groupAmount[12] = {{0}};
-int groupGhostAmount[12] = {{0}};
 float groupAmps[12] = {{0}};
 float groupDelta[12] = {{0}};
-float groupMultiplier[12] = {{1}};
+float groupMultiplier[12] = {{0}};
 float groupAmpsLimit[12] = {{4}};
 bool monitorGroup[12] = {{false}};
-int check = 0;
 
 void group_SmartMotor(int group, SmartMotor &sm){
 	sm.group = group;
 	groups[group][groupAmount[group]] = sm.smotor;
-	check = groups[group][groupAmount[group]];
 	groupAmount[group]++;
 }
 
-void group_GhostMotor(int group, int amount){
-	groupGhostAmount[group] = amount;
-}
 
 
 void start_SmartMotor(SmartMotor &sm){
@@ -180,15 +171,6 @@ void start_SmartMotor(SmartMotor &sm){
 	clearTimer(T1);
 
 	while(1){
-	////Stream Troubleshoot
-			clearDebugStream();
-			writeDebugStream("Delta:%f\n",sm.deltaEffort);
-			writeDebugStream("Multi:%f\n",groupMultiplier[1]);
-			writeDebugStream("Check:%f\n",groups[0][1]);
-			writeDebugStream("GroupAmps:%f",groupAmps[1]);
-	
-	
-	
 		sm.effort = motor[sm.smotor];
 		positionCurrent = getMotorEncoder(sm.smotor);
 		sm.backEMF = -(sm.Ke * (getMotorVelocity(sm.smotor))* sm.direction);
@@ -198,12 +180,11 @@ void start_SmartMotor(SmartMotor &sm){
 		for(int j = 0; j < 12; j++){
 			if(monitorGroup[j]){
 				for(int i = 0; i < groupAmount[j] + 1; i++){
-					calcAmp = calcAmp + smart_motor[groups[j][i]].amps;
-					if(abs(calcDelta) < abs(smart_motor[groups[j][i]].deltaEffort))
-						calcDelta =  smart_motor[groups[j][i]].deltaEffort;
+					calcAmp = calcAmp + motorS[groups[j][i]].amps;
+					if(abs(calcDelta) < abs(motorS[groups[j][i]].deltaEffort))
+						calcDelta =  motorS[groups[j][i]].deltaEffort;
 				}
-				
-				groupAmps[j] = calcAmp + (calcAmp * (groupGhostAmount[j]/groupAmount[j]));
+				groupAmps[j] = calcAmp;
 				groupDelta[j] = calcDelta;
 				groupMultiplier[j] = (127.0-groupDelta[j])/127.0;
 			}
@@ -267,7 +248,7 @@ void start_SmartMotor(SmartMotor &sm){
 			if(getMotorVelocity(sm.smotor) > 15 && (sm.direction * sm.effort) < 0){
 				positionCurrent = getMotorEncoder(sm.smotor);
 				writeDebugStream("Loop:%d",(sm.direction * sm.effort));
-				//sm.input = sm.input*(15.0/127.0);
+				sm.input = sm.input*(15.0/127.0);
 				sm.deltaEffort = 0;
 				sm.amps = ((sm.backEMF)/sm.motorRes);
 				sm.backEMF = -(sm.Ke * (getMotorVelocity(sm.smotor))* sm.direction);
@@ -292,7 +273,7 @@ void start_SmartMotor(SmartMotor &sm){
 
 			//If Amps are below target and the limiter is within bounds, slowly allow more effort by 1 every 100msec
 			else if((sm.targetAmp) > abs(sm.amps)){
-			//	sm.input = sm.input*(20.0/127.0);
+				sm.input = sm.input*(20.0/127.0);
 			}
 
 		}
@@ -306,7 +287,10 @@ void start_SmartMotor(SmartMotor &sm){
 			//if((sm.effort*sm.deltaEffort) < 0)
 			//	sm.deltaEffort = 0;
 
-
+			clearDebugStream();
+			writeDebugStream("Bool:%f\n",(((abs(sm.targetAmp) < abs(sm.amps)) || (abs(groupAmps[sm.group]) > groupAmpsLimit[sm.group])) && (sm.deltaEffort < 127));
+			writeDebugStream("Delta:%f\n",sm.deltaEffort);
+			writeDebugStream("Multi:%f\n",sm.multiplier);
 			//If Amps go above target and the limiter is within bounds, deduct effort by 5 every 100msec
 			if(((abs(sm.targetAmp) < abs(sm.amps)) || (abs(groupAmps[sm.group]) > groupAmpsLimit[sm.group])) && sm.deltaEffort < 127){
 				//	if(abs(groupAmps[sm.group]) > groupAmpsLimit[sm.group])
@@ -326,12 +310,11 @@ void start_SmartMotor(SmartMotor &sm){
 				sm.deltaEffort = 0;
 
 			sm.multiplier = (127.0 - (sm.deltaEffort))/127.0;
-	}
-			
+
 			if((sm.direction * sm.input) > -1 && getMotorVelocity(sm.smotor) > 0)
 				motor[sm.smotor] = sm.input;
 
-			else if((sm.direction * sm.input) <= -1 && getMotorVelocity(sm.smotor) > 0){
+			else if((sm.direction * sm.input) < -1 && getMotorVelocity(sm.smotor) > 0){
 				motor[sm.smotor] = sm.input*((127-(getMotorVelocity(sm.smotor)*sm.Ke*60))/127);
 
 			}
@@ -339,7 +322,7 @@ void start_SmartMotor(SmartMotor &sm){
 			else if(getMotorVelocity(sm.smotor) == 0)
 				motor[sm.smotor] = sm.input;
 
-
+		}
 
 
 		sm.totalAmp = sm.totalAmp + sm.amps;
