@@ -1,4 +1,7 @@
 /*
+
+Updated: 4/30/2017
+
 Basic Instructions:
       Thank you for using the smart motor library made at ODU as an attempt to reduce the over heating of motors. The method used is to predict the amps and limit the effort in respect to amps.
       Anyone of the settings in the init_SmartMotor initializer can be set to how you want such as amp limit, rate of decrease in effort, rate of increase in effort etc...
