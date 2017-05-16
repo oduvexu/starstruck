@@ -335,7 +335,7 @@ void start_SmartMotor(SmartMotor &sm){
 				motor[sm.smotor] = sm.input;
 
 			else if((sm.direction * sm.input) <= -1 && getMotorVelocity(sm.smotor) > 0){
-				motor[sm.smotor] = sm.input*(1/(getMotorVelocity(sm.smotor));
+				motor[sm.smotor] = sm.input*(1/(getMotorVelocity(sm.smotor)*sm.Ke*2));
 
 			}
 
