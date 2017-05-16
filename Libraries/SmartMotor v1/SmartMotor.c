@@ -184,11 +184,11 @@ void start_SmartMotor(SmartMotor &sm){
 
 	while(1){
 	////Stream Troubleshoot
-			clearDebugStream();
-			writeDebugStream("Delta:%f\n",sm.deltaEffort);
-			writeDebugStream("Multi:%f\n",groupMultiplier[1]);
-			writeDebugStream("Check:%f\n",groups[0][1]);
-			writeDebugStream("GroupAmps:%f",groupAmps[1]);
+	//		clearDebugStream();
+	//		writeDebugStream("Delta:%f\n",sm.deltaEffort);
+	//		writeDebugStream("Multi:%f\n",groupMultiplier[1]);
+	//		writeDebugStream("Check:%f\n",groups[0][1]);
+	//		writeDebugStream("GroupAmps:%f",groupAmps[1]);
 	
 	
 	
@@ -335,7 +335,7 @@ void start_SmartMotor(SmartMotor &sm){
 				motor[sm.smotor] = sm.input;
 
 			else if((sm.direction * sm.input) <= -1 && getMotorVelocity(sm.smotor) > 0){
-				motor[sm.smotor] = sm.input*((127-(getMotorVelocity(sm.smotor)*sm.Ke*60))/127);
+				motor[sm.smotor] = sm.input*(1/(getMotorVelocity(sm.smotor));
 
 			}
 
