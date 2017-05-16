@@ -149,13 +149,13 @@ void init_SmartMotor(SmartMotor &sm, int smotor)
 
 SmartMotor smart_motor[12];
 int groups[12][12] = {{0}};
-int groupAmount[12] = {{0}};
-int groupGhostAmount[12] = {{0}};
-float groupAmps[12] = {{0}};
-float groupDelta[12] = {{0}};
-float groupMultiplier[12] = {{1}};
-float groupAmpsLimit[12] = {{4}};
-bool monitorGroup[12] = {{false}};
+int groupAmount[12] = {0};
+int groupGhostAmount[12] = {0};
+float groupAmps[12] = {0};
+float groupDelta[12] = {0};
+float groupMultiplier[12] = {1.0};
+float groupAmpsLimit[12] = {4.0};
+bool monitorGroup[12] = {false};
 int check = 0;
 
 void group_SmartMotor(int group, SmartMotor &sm){
