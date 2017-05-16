@@ -202,12 +202,14 @@ void start_SmartMotor(SmartMotor &sm){
 			if(monitorGroup[j]){
 				for(int i = 0; i < groupAmount[j] + 1; i++){
 					calcAmp = calcAmp + smart_motor[groups[j][i]].amps;
-					if(abs(calcDelta) < abs(smart_motor[groups[j][i]].deltaEffort))
-						calcDelta =  smart_motor[groups[j][i]].deltaEffort;
+					if((abs(groupAmps[sm.group]) > groupAmpsLimit[sm.group]) && groupAmps[sm.group] < 127)
+						groupDelta[j] = groupDelta[j] + 5;
+					else if((abs(groupAmps[sm.group]) < groupAmpsLimit[sm.group]) && groupAmps[sm.group] > 0)
+						groupDelta[j] = groupDelta[j] - 1;
+					
 				}
 				
 				groupAmps[j] = calcAmp + (calcAmp * (groupGhostAmount[j]/groupAmount[j]));
-				groupDelta[j] = calcDelta;
 				groupMultiplier[j] = (127.0-groupDelta[j])/127.0;
 			}
 		}
@@ -265,12 +267,8 @@ void start_SmartMotor(SmartMotor &sm){
 		//Check if effort and direction are different
 		if((sm.direction * sm.effort) < -15){
 
-			writeDebugStream("Wrong Way:%d",(sm.direction * sm.effort));
-
 			if(getMotorVelocity(sm.smotor) > 15 && (sm.direction * sm.effort) < 0){
 				positionCurrent = getMotorEncoder(sm.smotor);
-				writeDebugStream("Loop:%d",(sm.direction * sm.effort));
-				//sm.input = sm.input*(15.0/127.0);
 				sm.deltaEffort = 0;
 				sm.amps = ((sm.backEMF)/sm.motorRes);
 				sm.backEMF = -(sm.Ke * (getMotorVelocity(sm.smotor))* sm.direction);
@@ -312,12 +310,8 @@ void start_SmartMotor(SmartMotor &sm){
 
 			//If Amps go above target and the limiter is within bounds, deduct effort by 5 every 100msec
 			if(((abs(sm.targetAmp) < abs(sm.amps)) || (abs(groupAmps[sm.group]) > groupAmpsLimit[sm.group])) && sm.deltaEffort < 127){
-				//	if(abs(groupAmps[sm.group]) > groupAmpsLimit[sm.group])
-				//		sm.deltaEffort = sm.deltaEffort + 1;
-				writeDebugStream("Check:%d",(sm.direction * sm.effort));
 				if(abs(sm.targetAmp) < abs(sm.amps)){
 					sm.deltaEffort = sm.deltaEffort + 5;
-					writeDebugStream("Check2:%d",(sm.direction * sm.effort));
 				}
 			}
 
