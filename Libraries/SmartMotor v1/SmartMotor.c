@@ -203,11 +203,11 @@ void start_SmartMotor(SmartMotor &sm){
 				for(int i = 0; i < groupAmount[j] + 1; i++){
 					calcAmp = calcAmp + smart_motor[groups[j][i]].amps;
 					if((abs(groupAmps[j]) > groupAmpsLimit[j]) && groupDelta[j] < 127)
-						groupDelta[j] = groupDelta[j] + 5;
+						groupDelta[j] = groupDelta[j];
 					else if((abs(groupAmps[j]) < groupAmpsLimit[j]) && groupDelta[j] > 0)
 						groupDelta[j] = groupDelta[j] - 1;
-					else if(sm.effort == 0)
-						motor[sm.smotor] = 0;
+					else if(motor[sm.smotor] == 0)
+						groupDelta[j] = 0;
 				}
 				
 				groupAmps[j] = calcAmp + (calcAmp * (groupGhostAmount[j]/groupAmount[j]));
