@@ -202,15 +202,15 @@ void start_SmartMotor(SmartMotor &sm){
 			if(monitorGroup[j]){
 				for(int i = 0; i < groupAmount[j] + 1; i++){
 					calcAmp = calcAmp + smart_motor[groups[j][i]].amps;
-					if((abs(groupAmps[sm.group]) > groupAmpsLimit[sm.group]) && groupAmps[sm.group] < 127)
+					if((abs(groupAmps[sm.group]) > groupAmpsLimit[sm.group]) && groupDelta[sm.group] < 127)
 						groupDelta[j] = groupDelta[j] + 5;
-					else if((abs(groupAmps[sm.group]) < groupAmpsLimit[sm.group]) && groupAmps[sm.group] > 0)
+					else if((abs(groupAmps[sm.group]) < groupAmpsLimit[sm.group]) && groupDelta[sm.group] > 0)
 						groupDelta[j] = groupDelta[j] - 1;
 					
 				}
 				
 				groupAmps[j] = calcAmp + (calcAmp * (groupGhostAmount[j]/groupAmount[j]));
-				groupMultiplier[j] = (127.0-groupDelta[j])/127.0;
+				groupMultiplier[j] = abs((127.0-groupDelta[j])/127.0);
 			}
 		}
 
@@ -309,10 +309,8 @@ void start_SmartMotor(SmartMotor &sm){
 
 
 			//If Amps go above target and the limiter is within bounds, deduct effort by 5 every 100msec
-			if(((abs(sm.targetAmp) < abs(sm.amps)) || (abs(groupAmps[sm.group]) > groupAmpsLimit[sm.group])) && sm.deltaEffort < 127){
-				if(abs(sm.targetAmp) < abs(sm.amps)){
+			if((abs(sm.targetAmp) < abs(sm.amps)) && sm.deltaEffort < 127){
 					sm.deltaEffort = sm.deltaEffort + 5;
-				}
 			}
 
 			//If Amps are below target and the limiter is within bounds, slowly allow more effort by 1 every 100msec
